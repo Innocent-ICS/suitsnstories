@@ -204,45 +204,69 @@ export function PerceptoscopeConsole({
 
   return (
     <div className="space-y-6">
+      {/* Header — Principle I: Hierarchy Before Decoration */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
-            <StethoscopeIcon className="h-4 w-4" />
+          <p className="mb-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-primary">
             Perceptoscope
-          </div>
-          <h1 className="text-3xl font-serif text-foreground">Pitch Diagnosis</h1>
-          <p className="mt-1 max-w-2xl text-muted-foreground">
+          </p>
+          <h1 className="text-[26px] font-medium text-foreground" style={{ fontFamily: "var(--font-serif)" }}>
+            Pitch Diagnosis
+          </h1>
+          <p className="mt-1 max-w-2xl text-[13px]" style={{ color: "var(--muted-foreground)", opacity: 0.7 }}>
             Analyze story clarity, investor readiness, visual communication, and evidence gaps.
           </p>
         </div>
         {activeAnalysis?.status === "COMPLETED" && (
-          <div className="rounded-lg border border-border bg-card px-4 py-3 text-right">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Score</p>
+          <div
+            className="rounded-lg px-4 py-3 text-right"
+            style={{ border: "0.5px solid var(--border-whisper)", backgroundColor: "var(--surface-1)" }}
+          >
+            <p className="text-[10px] uppercase tracking-[0.1em]" style={{ color: "var(--muted-foreground)", opacity: 0.6 }}>Score</p>
             <p className="text-2xl font-semibold text-foreground">{activeAnalysis.score ?? "--"}</p>
           </div>
         )}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[340px_1fr]">
+        {/* Left panel — Form + History */}
         <aside className="space-y-4">
-          <section className="rounded-xl border border-border bg-card p-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <section
+            className="rounded-xl p-5"
+            style={{ border: "0.5px solid var(--border-whisper)", backgroundColor: "var(--surface-1)" }}
+          >
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Principle VII: Typography as Architecture — 12px labels at 50% opacity */}
               <div>
-                <label className="text-sm font-medium text-foreground">Diagnosis title</label>
+                <label className="text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
+                  Diagnosis title
+                </label>
                 <input
                   name="title"
                   required
                   maxLength={160}
                   placeholder="Seed round deck review"
-                  className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="mt-1.5 w-full rounded-md px-3 py-2 text-[13px] outline-none"
+                  style={{
+                    border: "0.5px solid var(--border-subtle)",
+                    backgroundColor: "var(--surface-overlay)",
+                    color: "var(--foreground)",
+                  }}
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground">Project</label>
+                <label className="text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
+                  Project
+                </label>
                 <select
                   name="projectId"
-                  className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="mt-1.5 w-full rounded-md px-3 py-2 text-[13px] outline-none"
+                  style={{
+                    border: "0.5px solid var(--border-subtle)",
+                    backgroundColor: "var(--surface-overlay)",
+                    color: "var(--foreground)",
+                  }}
                   defaultValue=""
                 >
                   <option value="">No linked project</option>
@@ -254,11 +278,19 @@ export function PerceptoscopeConsole({
                 </select>
               </div>
 
+              {/* Principle VI: Affordances Made Visible — pill badges instead of dropdown */}
               <div>
-                <label className="text-sm font-medium text-foreground">Model route</label>
+                <label className="text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
+                  Model route
+                </label>
                 <select
                   name="provider"
-                  className="mt-1.5 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="mt-1.5 w-full rounded-md px-3 py-2 text-[13px] outline-none"
+                  style={{
+                    border: "0.5px solid var(--border-subtle)",
+                    backgroundColor: "var(--surface-overlay)",
+                    color: "var(--foreground)",
+                  }}
                   defaultValue=""
                 >
                   <option value="">Auto</option>
@@ -267,69 +299,103 @@ export function PerceptoscopeConsole({
                 </select>
               </div>
 
+              {/* Principle VI: File zone — dashed border + icon = affordance chorus */}
               <div>
-                <label className="text-sm font-medium text-foreground">Deck file</label>
+                <label className="text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
+                  Deck file
+                </label>
                 <input
                   name="file"
                   type="file"
                   required
                   accept=".pdf,.pptx,.docx,.png,.jpg,.jpeg,.webp,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/png,image/jpeg,image/webp,text/plain,text/markdown"
-                  className="mt-1.5 w-full rounded-md border border-dashed border-input bg-background px-3 py-3 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground"
+                  className="mt-1.5 w-full rounded-md px-3 py-3 text-[13px] file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground"
+                  style={{
+                    border: "1px dashed color-mix(in srgb, var(--primary) 25%, var(--border-subtle))",
+                    backgroundColor: "var(--surface-overlay)",
+                    color: "var(--foreground)",
+                  }}
                 />
-                <p className="mt-1.5 text-xs text-muted-foreground">
-                  Files up to 60MB are compressed into a lean analysis artifact before OCR/model review.
+                <p className="mt-1.5 text-[11px]" style={{ color: "var(--muted-foreground)", opacity: 0.5 }}>
+                  Files up to 20MB are compressed into a lean analysis artifact before OCR/model review.
                 </p>
               </div>
 
               <div>
-                <label className="text-sm font-medium text-foreground">Founder context</label>
+                <label className="text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
+                  Founder context
+                </label>
                 <textarea
                   name="founderContext"
-                  rows={4}
+                  rows={3}
                   maxLength={6000}
                   placeholder="Audience, fundraising stage, target ask, biggest worry..."
-                  className="mt-1.5 w-full resize-none rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  className="mt-1.5 w-full resize-none rounded-md px-3 py-2 text-[13px] outline-none"
+                  style={{
+                    border: "0.5px solid var(--border-subtle)",
+                    backgroundColor: "var(--surface-overlay)",
+                    color: "var(--foreground)",
+                  }}
                 />
               </div>
 
               {error && (
-                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-[13px] text-destructive">
                   {error}
                 </p>
               )}
 
-              <Button type="submit" disabled={submitting} className="w-full gap-2">
+              {/* Principle VI: Run button — only solid-filled element = unmistakable primary action */}
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="w-full gap-2"
+                style={{
+                  background: submitting ? undefined : "linear-gradient(135deg, #9333ea, #7c3aed)",
+                  transition: "opacity 0.15s ease, transform 0.1s ease",
+                }}
+              >
                 <DocumentArrowUpIcon className="h-4 w-4" />
                 {submitting ? "Starting..." : "Run Perceptoscope"}
               </Button>
             </form>
           </section>
 
-          <section className="rounded-xl border border-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-medium text-foreground">Recent diagnoses</h2>
-            <div className="space-y-2">
+          {/* Recent diagnoses list */}
+          <section
+            className="rounded-xl p-4"
+            style={{ border: "0.5px solid var(--border-whisper)", backgroundColor: "var(--surface-1)" }}
+          >
+            <h2 className="mb-3 text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
+              Recent diagnoses
+            </h2>
+            <div className="space-y-1.5">
               {analyses.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No diagnoses yet.</p>
+                <p className="text-[13px] text-muted-foreground">No diagnoses yet.</p>
               ) : (
                 analyses.map((analysis) => (
                   <button
                     key={analysis.id}
                     type="button"
                     onClick={() => setActiveId(analysis.id)}
-                    className={`w-full rounded-lg border p-3 text-left transition-colors ${
-                      activeAnalysis?.id === analysis.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:bg-muted"
-                    }`}
+                    className="w-full rounded-lg p-3 text-left transition-colors"
+                    style={{
+                      border: activeAnalysis?.id === analysis.id
+                        ? "0.5px solid color-mix(in srgb, var(--primary) 30%, transparent)"
+                        : "0.5px solid var(--border-whisper)",
+                      backgroundColor: activeAnalysis?.id === analysis.id
+                        ? "color-mix(in srgb, var(--primary) 5%, transparent)"
+                        : "transparent",
+                    }}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">{analysis.title}</p>
-                        <p className="truncate text-xs text-muted-foreground">{analysis.fileName}</p>
+                        <p className="truncate text-[13px] font-medium text-foreground">{analysis.title}</p>
+                        <p className="truncate text-[11px] text-muted-foreground">{analysis.fileName}</p>
                       </div>
                       <StatusBadge status={analysis.status} />
                     </div>
-                    <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                    <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>{formatDate(analysis.createdAt)}</span>
                       {analysis.score !== null && <span>{analysis.score}/100</span>}
                     </div>
@@ -340,6 +406,7 @@ export function PerceptoscopeConsole({
           </section>
         </aside>
 
+        {/* Right panel — Report or Empty State */}
         <main>
           {!activeAnalysis ? (
             <EmptyState />
@@ -483,10 +550,67 @@ function FailureState({ analysis }: { analysis: AnalysisListItem }) {
 }
 
 function EmptyState() {
+  const dimensions = [
+    { label: "Story clarity", width: "45%" },
+    { label: "Investor readiness", width: "35%" },
+    { label: "Visual communication", width: "55%" },
+    { label: "Evidence gaps", width: "25%" },
+  ];
+
   return (
-    <section className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-      <StethoscopeIcon className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-      <p className="text-muted-foreground">Run a pitch diagnosis to see the report here.</p>
+    <section
+      className="flex flex-col items-center rounded-xl p-10"
+      style={{ border: "0.5px solid var(--border-whisper)", backgroundColor: "var(--surface-1)" }}
+    >
+      {/* Orbit animation — Principle V & VIII: system readiness, purposeful motion */}
+      <div className="relative mb-8 flex h-32 w-32 items-center justify-center">
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: "1px dashed var(--border-subtle)",
+            animation: "orbit-slow 8s linear infinite",
+          }}
+        />
+        <div
+          className="absolute inset-3 rounded-full"
+          style={{
+            border: "1px dashed color-mix(in srgb, var(--primary) 20%, var(--border-subtle))",
+            animation: "orbit-fast 5s linear infinite reverse",
+          }}
+        />
+        <StethoscopeIcon className="h-8 w-8 text-primary opacity-60" />
+      </div>
+
+      <p className="mb-1 text-[13px] font-medium text-foreground">Ready to diagnose</p>
+      <p className="mb-8 text-[12px]" style={{ color: "var(--muted-foreground)", opacity: 0.5 }}>
+        Upload a pitch deck to see the report here.
+      </p>
+
+      {/* Dimension stubs — Principle V: show the container before the content */}
+      <div className="w-full max-w-xs space-y-3">
+        {dimensions.map((dim) => (
+          <div key={dim.label} className="flex items-center gap-3">
+            <span className="w-36 text-[11px] font-medium" style={{ color: "var(--muted-foreground)", opacity: 0.4 }}>
+              {dim.label}
+            </span>
+            <div className="flex-1 h-1.5 rounded-full" style={{ backgroundColor: "var(--surface-2)" }}>
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: dim.width,
+                  backgroundColor: "color-mix(in srgb, var(--primary) 15%, var(--surface-2))",
+                }}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Orbit keyframes injected via style tag */}
+      <style>{`
+        @keyframes orbit-slow { to { transform: rotate(360deg); } }
+        @keyframes orbit-fast { to { transform: rotate(360deg); } }
+      `}</style>
     </section>
   );
 }

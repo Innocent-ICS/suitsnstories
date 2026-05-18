@@ -86,34 +86,51 @@ interface SidebarProps {
   userName?: string | null;
 }
 
+/*
+ * Visual Elevation Codex — Principle X: Sidebar as Navigation + Identity
+ *
+ * Three-state nav system: inactive (40% opacity) → hover (70%) → active (full purple + edge indicator)
+ * Logo mark uses a coloured tile to establish brand presence
+ * Active item has a right-edge purple accent border
+ * 0.5px whisper border between sidebar and content (Principle III)
+ */
 export function Sidebar({ role, userName }: SidebarProps) {
   const pathname = usePathname();
   const navItems = getNavForRole(role);
 
   return (
-    <aside className="hidden md:flex md:w-64 md:flex-col border-r border-border bg-card">
-      {/* Logo */}
-      <div className="flex h-16 items-center px-6 border-b border-border">
+    <aside
+      className="hidden md:flex md:w-60 md:flex-col"
+      style={{
+        backgroundColor: "var(--surface-1)",
+        borderRight: "0.5px solid var(--border-whisper)",
+      }}
+    >
+      {/* Logo — Identity (Principle X) */}
+      <div
+        className="flex h-14 items-center gap-2.5 px-5"
+        style={{ borderBottom: "0.5px solid var(--border-whisper)" }}
+      >
         <Link href="/" className="flex items-center gap-2.5">
-          <img
-            src="/images/logo-light.png"
-            alt="Suits & Stories"
-            className="h-8 w-8 object-contain dark:hidden"
-          />
-          <img
-            src="/images/logo-dark.png"
-            alt="Suits & Stories"
-            className="h-8 w-8 object-contain hidden dark:block"
-          />
-          <span className="text-sm font-medium text-foreground">
+          <div
+            className="flex h-7 w-7 items-center justify-center rounded-md"
+            style={{ background: "linear-gradient(135deg, #9333ea, #a78bfa)" }}
+          >
+            <img
+              src="/images/logo-dark.png"
+              alt=""
+              className="h-4 w-4 object-contain"
+            />
+          </div>
+          <span className="text-[13px] font-medium" style={{ color: "var(--foreground)", opacity: 0.85 }}>
             Suits & Stories
           </span>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        <ul className="space-y-1">
+      {/* Navigation — Map (Principle X) */}
+      <nav className="flex-1 overflow-y-auto py-3 px-2.5">
+        <ul className="space-y-0.5">
           {navItems.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -122,13 +139,36 @@ export function Sidebar({ role, userName }: SidebarProps) {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
+                  className="group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors"
+                  style={{
+                    color: isActive
+                      ? "var(--primary)"
+                      : "var(--muted-foreground)",
+                    backgroundColor: isActive
+                      ? "color-mix(in srgb, var(--primary) 8%, transparent)"
+                      : "transparent",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = "var(--foreground)";
+                      e.currentTarget.style.backgroundColor = "var(--surface-overlay)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = "var(--muted-foreground)";
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }
+                  }}
                 >
-                  <item.icon className="h-5 w-5 shrink-0" />
+                  {/* Active indicator — right-edge purple accent (Principle X) */}
+                  {isActive && (
+                    <span
+                      className="absolute right-0 top-1/2 -translate-y-1/2 h-4 w-[2px] rounded-full"
+                      style={{ backgroundColor: "var(--primary)" }}
+                    />
+                  )}
+                  <item.icon className="h-[18px] w-[18px] shrink-0" />
                   {item.label}
                 </Link>
               </li>
@@ -137,17 +177,19 @@ export function Sidebar({ role, userName }: SidebarProps) {
         </ul>
       </nav>
 
-      {/* Settings link at bottom */}
-      <div className="border-t border-border p-3">
+      {/* Settings — bottom fixed */}
+      <div className="px-2.5 py-3" style={{ borderTop: "0.5px solid var(--border-whisper)" }}>
         <Link
           href="/settings"
-          className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-            pathname === "/settings"
-              ? "bg-primary/10 text-primary"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          }`}
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors"
+          style={{
+            color: pathname === "/settings" ? "var(--primary)" : "var(--muted-foreground)",
+            backgroundColor: pathname === "/settings"
+              ? "color-mix(in srgb, var(--primary) 8%, transparent)"
+              : "transparent",
+          }}
         >
-          <Cog6ToothIcon className="h-5 w-5 shrink-0" />
+          <Cog6ToothIcon className="h-[18px] w-[18px] shrink-0" />
           Settings
         </Link>
       </div>

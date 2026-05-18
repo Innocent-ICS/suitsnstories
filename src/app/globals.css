@@ -48,14 +48,19 @@
   }
 }
 
-/* 
-  Premium / High-Stakes Narrative Palette 
-  Inspiration: Goldman Sachs (Authority), Apple (Clarity), Airbnb (Warmth/Story)
-*/
+/* --------------------------------------------------------------------------
+   Visual Elevation Codex — Design Tokens
+   
+   Principles applied:
+   II. Surfaces That Breathe — depth through opacity increments
+   III. Borders as Whispers — thin, low-opacity structural dividers
+   IV. Colour Used as Signal — purple accent budget
+   IX. Spatial Consistency — 8px grid
+-------------------------------------------------------------------------- */
+
 :root {
   --background: #ffffff;
   --foreground: #0f172a;
-  /* Slate 900 */
 
   --card: #ffffff;
   --card-foreground: #0f172a;
@@ -63,72 +68,80 @@
   --popover: #ffffff;
   --popover-foreground: #0f172a;
 
-  /* Primary: Purple Brand Color */
+  /* Primary: Purple — spent deliberately (Principle IV) */
   --primary: #9333ea;
   --primary-foreground: #ffffff;
 
   /* Secondary: Dark Navy for contrast */
   --secondary: #0f172a;
-  /* Slate 900 */
   --secondary-foreground: #ffffff;
 
-  /* Muted: For backgrounds that need to recede */
+  /* Muted: Recessive surfaces */
   --muted: #f8fafc;
-  /* Slate 50 */
   --muted-foreground: #64748b;
-  /* Slate 500 */
 
-  /* Accent: A "Story" highlight color - Muted Gold or Deep Royal Blue. Let's go with a sophisticated Indigo/Blue */
+  /* Accent: Subtle surface elevation */
   --accent: #f1f5f9;
   --accent-foreground: #0f172a;
 
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
 
+  /* Borders as Whispers (Principle III) */
   --border: #e2e8f0;
-  /* Slate 200 */
   --input: #e2e8f0;
-  --ring: #0f172a;
+  --ring: #9333ea;
 
   --radius: 0.5rem;
-  /* Slightly boxier than full pill, more professional */
+
+  /* Surface elevation tokens */
+  --surface-0: #ffffff;
+  --surface-1: #fafbfc;
+  --surface-2: #f1f5f9;
+  --surface-overlay: rgba(0, 0, 0, 0.02);
+  --border-whisper: rgba(0, 0, 0, 0.06);
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-focus: rgba(147, 51, 234, 0.5);
 }
 
 .dark {
-  --background: #020617;
-  /* Slate 950 */
-  --foreground: #f8fafc;
-  /* Slate 50 */
+  --background: #0a0a12;
+  --foreground: #f0f0f5;
 
-  --card: #0f172a;
-  /* Slate 900 */
-  --card-foreground: #f8fafc;
+  --card: #0f0f1a;
+  --card-foreground: #f0f0f5;
 
-  --popover: #0f172a;
-  --popover-foreground: #f8fafc;
+  --popover: #0f0f1a;
+  --popover-foreground: #f0f0f5;
 
-  --primary: #9333ea;
-  --primary-foreground: #ffffff;
+  --primary: #a78bfa;
+  --primary-foreground: #0a0a12;
 
-  --secondary: #ffffff;
-  /* Slate 800 */
-  --secondary-foreground: #020617;
+  --secondary: #f0f0f5;
+  --secondary-foreground: #0a0a12;
 
-  --muted: #0f172a;
-  --muted-foreground: #94a3b8;
-  /* Slate 400 */
+  --muted: #13131f;
+  --muted-foreground: #8888a0;
 
-  --accent: #1e293b;
-  --accent-foreground: #f8fafc;
+  --accent: #1a1a2e;
+  --accent-foreground: #f0f0f5;
 
-  --destructive: #7f1d1d;
-  --destructive-foreground: #f8fafc;
+  --destructive: #dc2626;
+  --destructive-foreground: #f0f0f5;
 
-  --border: #334155;
-  /* Slate 700 - Higher contrast for dark mode */
-  --input: #334155;
-  --ring: #cbd5e1;
-  /* Slate 300 */
+  /* Borders as Whispers — dark mode (Principle III) */
+  --border: rgba(255, 255, 255, 0.07);
+  --input: rgba(255, 255, 255, 0.07);
+  --ring: #a78bfa;
+
+  /* Surface elevation — dark (Principle II) */
+  --surface-0: #0a0a12;
+  --surface-1: #0f0f1a;
+  --surface-2: #16162a;
+  --surface-overlay: rgba(255, 255, 255, 0.02);
+  --border-whisper: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --border-focus: rgba(167, 139, 250, 0.5);
 }
 
 @layer base {
@@ -140,14 +153,10 @@
     @apply bg-background text-foreground font-sans antialiased;
   }
 
-  /* Typography Scale Overrides for that "Editorial" feel */
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    @apply font-serif tracking-tight text-primary;
+  /* Typography as Architecture (Principle VII) */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-tight;
+    color: var(--foreground);
   }
 
   h1 {
@@ -160,5 +169,15 @@
 
   p {
     @apply leading-relaxed;
+  }
+
+  /* Motion With a Purpose Budget (Principle VIII) — only 3 purposeful transitions */
+  input, textarea, select {
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 1px var(--border-focus);
   }
 }
