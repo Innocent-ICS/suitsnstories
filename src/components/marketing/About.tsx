@@ -99,7 +99,7 @@ export function About() {
                     <div className="mx-auto max-w-2xl space-y-3 text-center">
                         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Founder experience includes</p>
                         <p className="text-sm leading-relaxed text-muted-foreground">
-                            Programs, competitions, scholarships, and communities where Innocent has participated, advanced, won, or been selected.
+                            Honors, programs, competitions, scholarships, and communities that Innocent has received, won, advanced in, been selected for, or participated in.
                         </p>
                     </div>
                     <LogoTicker items={HONORS_ITEMS} speed="slow" />
@@ -138,12 +138,15 @@ function PhilosophyItem({ icon, title, desc }: { icon: React.ReactNode, title: s
 const HONORS_ITEMS = [
     "Ashesi University",
     "Berkeley SkyDeck",
-    "Rhodes Trust",
-    "Mastercard Foundation",
+    "Rhodes Scholarship",
+    "Mastercard Foundation Scholarship",
+    "26th Zimbabwe Junior President",
     "Hult Prize",
     "Coca-Cola Foundation",
     "SCET Berkeley",
-    "Collider Cup XV"
+    "Collider Cup XV",
+    "Zimbabwe Junior Parliament",
+    "Melton Foundation Board"
 ].map((item, idx) => (
     <span key={idx} className="text-xl md:text-2xl font-serif text-foreground/40 hover:text-foreground transition-colors cursor-default whitespace-nowrap mx-8">
         {item}

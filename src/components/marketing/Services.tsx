@@ -101,9 +101,9 @@ export function Services() {
                                 </p>
                             </div>
 
-                            {/* Button */}
-                            <div className="mb-8">
-                                <Button className="w-full rounded-full h-11 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 shadow-md" asChild>
+                            {/* CTA */}
+                            <div className="mb-8 space-y-2.5">
+                                <Button className="w-full rounded-full h-11 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all hover:scale-[1.02]" asChild>
                                     <a href="#contact">Plan a Workshop</a>
                                 </Button>
                             </div>
@@ -137,9 +137,9 @@ export function Services() {
                                 </p>
                             </div>
 
-                            {/* Button */}
-                            <div className="mb-8">
-                                <Button variant="outline" className="w-full rounded-full h-11 text-sm font-medium border-border hover:bg-muted font-sans" asChild>
+                            {/* CTA */}
+                            <div className="mb-8 space-y-2.5">
+                                <Button variant="outline" className="w-full rounded-full h-11 text-sm font-semibold border-border hover:bg-muted hover:border-primary/50 font-sans transition-all hover:scale-[1.02]" asChild>
                                     <a href="#contact">Explore Partnership</a>
                                 </Button>
                             </div>
