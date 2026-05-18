@@ -17,9 +17,12 @@ import type { NextRequest } from "next/server";
 export function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
     
-    // Check for session token (NextAuth uses next-auth.session-token cookie)
-    const sessionToken = req.cookies.get("next-auth.session-token") || 
-                        req.cookies.get("__Secure-next-auth.session-token");
+    // Check for session token (NextAuth v5 uses authjs.session-token)
+    // HTTP: authjs.session-token
+    // HTTPS: __Host-authjs.session-token or __Secure-authjs.session-token
+    const sessionToken = req.cookies.get("authjs.session-token") || 
+                        req.cookies.get("__Host-authjs.session-token") ||
+                        req.cookies.get("__Secure-authjs.session-token");
     const isLoggedIn = !!sessionToken;
 
     // Auth routes: redirect logged-in users away from signin/signup
