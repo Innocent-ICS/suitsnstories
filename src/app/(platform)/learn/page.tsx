@@ -9,35 +9,37 @@ import {
 } from "@heroicons/react/24/outline";
 
 export default async function LearnPage() {
-  const session = await auth();
+  try {
+    const session = await auth();
+    const userId = session?.user?.id;
 
-  // Get published courses
-  const courses = await db.course.findMany({
-    where: { status: "PUBLISHED" },
-    orderBy: { createdAt: "asc" },
-    include: {
-      modules: {
-        include: {
-          lessons: { orderBy: { order: "asc" } },
-          _count: { select: { lessons: true } },
-        },
-        orderBy: { order: "asc" },
-      },
-    },
-  });
-
-  // Get user's enrollments
-  const enrollments = session?.user?.id
-    ? await db.enrollment.findMany({
-        where: { userId: session.user.id },
-        include: {
-          progress: {
-            where: { completed: true },
-            select: { lessonId: true },
+    // Get published courses
+    const courses = await db.course.findMany({
+      where: { status: "PUBLISHED" },
+      orderBy: { createdAt: "asc" },
+      include: {
+        modules: {
+          include: {
+            lessons: { orderBy: { order: "asc" } },
+            _count: { select: { lessons: true } },
           },
+          orderBy: { order: "asc" },
         },
-      })
-    : [];
+      },
+    });
+
+    // Get user's enrollments (only if user is logged in)
+    const enrollments = userId
+      ? await db.enrollment.findMany({
+          where: { userId },
+          include: {
+            progress: {
+              where: { completed: true },
+              select: { lessonId: true },
+            },
+          },
+        })
+      : [];
 
   const enrolledCourseIds = new Set(enrollments.map((e) => e.courseId));
   const enrollmentByCourseId = new Map(enrollments.map((e) => [e.courseId, e]));
@@ -213,4 +215,23 @@ export default async function LearnPage() {
       </div>
     </div>
   );
+  } catch (error) {
+    console.error("Error loading learn page:", error);
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-serif text-foreground">Learn</h1>
+          <p className="text-muted-foreground mt-2">
+            Self-paced pitch coaching curriculum. Master the art of narrative strategy.
+          </p>
+        </div>
+        <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
+          <AcademicCapIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">
+            Unable to load courses. Please try refreshing the page.
+          </p>
+        </div>
+      </div>
+    );
+  }
 }

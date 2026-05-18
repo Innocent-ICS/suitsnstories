@@ -69,11 +69,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
-        async jwt({ token, user, trigger, session }) {
+        async jwt({ token, user, trigger, session, account }) {
+            // On sign in (when user object is available)
             if (user) {
                 token.id = user.id;
                 token.role = user.role;
             }
+            
+            // For OAuth providers, fetch user from database if id is not in token
+            if (account && !token.id && token.email) {
+                const dbUser = await db.user.findUnique({
+                    where: { email: token.email },
+                    select: { id: true, role: true },
+                });
+                if (dbUser) {
+                    token.id = dbUser.id;
+                    token.role = dbUser.role;
+                }
+            }
+            
             // Refresh role from DB on session update
             if (trigger === "update" && token.id) {
                 const dbUser = await db.user.findUnique({
