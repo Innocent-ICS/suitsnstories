@@ -1,13 +1,23 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
 import { ProfileForm } from "./profile-form";
 
 export default async function SettingsPage() {
   const session = await auth();
+  
+  if (!session?.user?.id) {
+    redirect("/auth/signin");
+  }
+  
   const user = await db.user.findUnique({
-    where: { id: session?.user?.id ?? "" },
+    where: { id: session.user.id },
     include: { profile: true },
   });
+  
+  if (!user) {
+    redirect("/auth/signin");
+  }
 
   return (
     <div className="max-w-2xl space-y-8">

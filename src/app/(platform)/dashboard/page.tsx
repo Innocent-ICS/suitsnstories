@@ -2,16 +2,28 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import type { UserRole } from "@/types/auth";
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { PaymentBanner } from "./payment-banner";
 
 export default async function DashboardPage() {
   const session = await auth();
+  
+  // Redirect if no valid session
+  if (!session?.user?.id) {
+    redirect("/auth/signin");
+  }
+  
   const user = await db.user.findUnique({
-    where: { id: session?.user?.id ?? "" },
+    where: { id: session.user.id },
     select: { role: true, name: true, profile: true },
   });
 
-  const role = (user?.role ?? "CLIENT") as UserRole;
+  // Redirect if user not found in database
+  if (!user) {
+    redirect("/auth/signin");
+  }
+
+  const role = (user.role ?? "CLIENT") as UserRole;
 
   // Fetch real stats for admin
   let adminStats = { users: 0, courses: 0, inquiries: 0, bookings: 0 };
