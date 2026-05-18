@@ -128,7 +128,11 @@ export function PerceptoscopeConsole({
         });
       } else {
         // Storage failed and file too large for fallback
-        setError(storageResult.error || "Could not upload the file.");
+        setError(
+          file.size >= DIRECT_UPLOAD_LIMIT
+            ? "This file is too large for direct upload. Please try a smaller file (under 4.5MB) or contact support."
+            : storageResult.error || "Could not upload the file."
+        );
         setSubmitting(false);
         return;
       }
@@ -180,13 +184,9 @@ export function PerceptoscopeConsole({
       body: JSON.stringify({ fileName: file.name, fileType: file.type, fileSize: file.size }),
     });
 
-    // 503 = storage not configured — signal fallback
-    if (urlResponse.status === 503) {
-      return { ok: false, fallback: true };
-    }
+    // Any upload-url failure triggers fallback for small files
     if (!urlResponse.ok) {
-      const p = (await urlResponse.json().catch(() => null)) as { error?: string } | null;
-      return { ok: false, fallback: false, error: p?.error || "Could not prepare the upload." };
+      return { ok: false, fallback: true };
     }
 
     const { signedUrl, storagePath } = (await urlResponse.json()) as {
