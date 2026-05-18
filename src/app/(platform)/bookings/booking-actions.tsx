@@ -4,19 +4,25 @@ import { useRouter } from "next/navigation";
 import { updateBookingStatus } from "@/actions/booking";
 import { Button } from "@/components/ui/button";
 
-const labels: Record<string, string> = {
+type BookingAction = "CONFIRMED" | "CANCELLED" | "COMPLETED" | "NO_SHOW";
+
+const labels: Record<BookingAction, string> = {
   CONFIRMED: "Confirm",
   CANCELLED: "Cancel",
   COMPLETED: "Complete",
   NO_SHOW: "No-show",
 };
 
-const variants: Record<string, "default" | "outline" | "destructive"> = {
+const variants: Record<BookingAction, "default" | "outline" | "destructive"> = {
   CONFIRMED: "default",
   CANCELLED: "destructive",
   COMPLETED: "outline",
   NO_SHOW: "outline",
 };
+
+function isBookingAction(action: string): action is BookingAction {
+  return action in labels;
+}
 
 export function BookingActions({
   bookingId,
@@ -27,25 +33,29 @@ export function BookingActions({
 }) {
   const router = useRouter();
 
-  async function handle(status: string) {
+  async function handle(status: BookingAction) {
     if (status === "CANCELLED" && !confirm("Cancel this booking?")) return;
-    await updateBookingStatus(bookingId, status as any);
+    await updateBookingStatus(bookingId, status);
     router.refresh();
   }
 
   return (
-    <div className="flex gap-1">
-      {actions.map((action) => (
-        <Button
-          key={action}
-          size="sm"
-          variant={variants[action] || "outline"}
-          onClick={() => handle(action)}
-          className="text-xs"
-        >
-          {labels[action] || action}
-        </Button>
-      ))}
+    <div className="flex flex-wrap gap-2">
+      {actions.map((action) => {
+        if (!isBookingAction(action)) return null;
+
+        return (
+          <Button
+            key={action}
+            size="sm"
+            variant={variants[action]}
+            onClick={() => handle(action)}
+            className="text-xs"
+          >
+            {labels[action]}
+          </Button>
+        );
+      })}
     </div>
   );
 }

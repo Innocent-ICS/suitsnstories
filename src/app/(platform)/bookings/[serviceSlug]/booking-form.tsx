@@ -4,9 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { getAvailableSlots, createBooking } from "@/actions/booking";
 import { initBookingPayment } from "@/actions/payment";
-import { CalendarIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { CalendarButtons } from "../calendar-buttons";
+import { CheckCircleIcon } from "@heroicons/react/24/outline";
 
 interface Coach {
   id: string;
@@ -66,15 +68,15 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
       const startTime = new Date(`${selectedDate}T${selectedTime}:00.000Z`).toISOString();
 
       if (servicePrice > 0) {
-        // Paid booking — redirect to PayStack
+        // Paid booking — open the native checkout first.
         const result = await initBookingPayment(
           serviceId,
           selectedCoach!.id,
           startTime,
           notes || undefined
         );
-        if (result.success && result.paymentUrl) {
-          window.location.href = result.paymentUrl;
+        if (result.success && result.checkoutUrl) {
+          router.push(result.checkoutUrl);
           return;
         } else {
           setError(result.error || "Payment init failed");
@@ -126,29 +128,6 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
     const timeStr = `${selectedTime} – ${endDt.toISOString().slice(11, 16)} (UTC)`;
     const localTimeStr = `${formatLocalRange()} (${localTimeZone})`;
 
-    // Generate .ics calendar file
-    const icsContent = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//Suits & Stories//Booking//EN",
-      "BEGIN:VEVENT",
-      `DTSTART:${startDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
-      `DTEND:${endDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
-      `SUMMARY:Suits & Stories — Session with ${selectedCoach?.name}`,
-      `DESCRIPTION:${notes || "Coaching session booked via Suits & Stories"}`,
-      "STATUS:CONFIRMED",
-      "END:VEVENT",
-      "END:VCALENDAR",
-    ].join("\r\n");
-
-    const icsBlob = new Blob([icsContent], { type: "text/calendar" });
-    const icsUrl = URL.createObjectURL(icsBlob);
-
-    // Google Calendar link
-    const gcalStart = startDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-    const gcalEnd = endDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Session with ${selectedCoach?.name} — Suits & Stories`)}&dates=${gcalStart}/${gcalEnd}&details=${encodeURIComponent(notes || "Coaching session")}`;
-
     return (
       <div className="space-y-6">
         <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center space-y-3">
@@ -191,25 +170,14 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
 
         {/* Calendar actions */}
         <div className="flex flex-wrap gap-3">
-          <a
-            href={icsUrl}
-            download="suits-stories-session.ics"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-medium hover:shadow-sm transition-all"
-          >
-            <CalendarIcon className="h-4 w-4" />
-            Download .ics File
-          </a>
-          <a
-            href={gcalUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-medium hover:shadow-sm transition-all"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19.5 3h-3V1.5h-1.5V3h-6V1.5H7.5V3h-3C3.675 3 3 3.675 3 4.5v15c0 .825.675 1.5 1.5 1.5h15c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zm0 16.5h-15V8.25h15v11.25z"/>
-            </svg>
-            Add to Google Calendar
-          </a>
+          <CalendarButtons
+            title="Suits & Stories Session"
+            coachName={selectedCoach?.name || "Coach"}
+            startTime={startDt.toISOString()}
+            endTime={endDt.toISOString()}
+            notes={notes || undefined}
+            variant="full"
+          />
           <Button onClick={() => router.push("/bookings")} variant="outline">
             View All Bookings
           </Button>
@@ -261,15 +229,7 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
                   onClick={() => { setSelectedCoach(coach); setStep("date"); }}
                   className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all text-left"
                 >
-                  {coach.image ? (
-                    <img src={coach.image} alt="" className="h-10 w-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-medium text-primary">
-                        {coach.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
+                  <UserAvatar src={coach.image} name={coach.name} size="md" />
                   <div>
                     <p className="font-medium text-foreground">{coach.name}</p>
                     <p className="text-xs text-muted-foreground">Available for booking</p>

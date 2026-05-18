@@ -6,23 +6,24 @@ export async function GET(req: NextRequest) {
   const baseUrl = req.nextUrl.origin;
 
   if (!ref) {
-    return NextResponse.redirect(`${baseUrl}/dashboard?payment=missing`);
+    return NextResponse.redirect(`${baseUrl}/checkout/confirmation?status=missing`);
   }
 
   try {
     const result = await fulfillPayment(ref);
 
     if (result.success) {
-      return NextResponse.redirect(`${baseUrl}/dashboard?payment=success`);
+      return NextResponse.redirect(`${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=success`);
     } else {
       return NextResponse.redirect(
-        `${baseUrl}/dashboard?payment=failed&reason=${encodeURIComponent(result.error || "unknown")}`
+        `${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=failed&reason=${encodeURIComponent(result.error || "unknown")}`
       );
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Payment verify error:", error);
+    const message = error instanceof Error ? error.message : "unknown";
     return NextResponse.redirect(
-      `${baseUrl}/dashboard?payment=error&reason=${encodeURIComponent(error.message || "unknown")}`
+      `${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=error&reason=${encodeURIComponent(message)}`
     );
   }
 }

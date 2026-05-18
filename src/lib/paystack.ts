@@ -21,7 +21,7 @@ export async function initializeTransaction({
   amount: number; // in kobo/cents
   reference: string;
   callbackUrl: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }) {
   const res = await fetch(`${PAYSTACK_BASE_URL}/transaction/initialize`, {
     method: "POST",
@@ -73,7 +73,7 @@ export async function verifyTransaction(reference: string) {
     reference: string;
     amount: number;
     currency: string;
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
     customer: { email: string };
     paid_at: string;
   };

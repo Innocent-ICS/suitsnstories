@@ -1,6 +1,9 @@
 "use client";
 
-import { CalendarIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowDownTrayIcon,
+  CalendarDaysIcon,
+} from "@heroicons/react/24/outline";
 
 interface CalendarButtonProps {
   title: string;
@@ -8,6 +11,7 @@ interface CalendarButtonProps {
   startTime: string;
   endTime: string;
   notes?: string | null;
+  variant?: "compact" | "full";
 }
 
 function generateIcs({ title, coachName, startTime, endTime, notes }: CalendarButtonProps) {
@@ -18,7 +22,10 @@ function generateIcs({ title, coachName, startTime, endTime, notes }: CalendarBu
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
     "PRODID:-//Suits & Stories//Booking//EN",
+    "CALSCALE:GREGORIAN",
+    "METHOD:PUBLISH",
     "BEGIN:VEVENT",
+    `UID:${start.getTime()}-${title.replace(/\s+/g, "-").toLowerCase()}@suitsandstories`,
     `DTSTART:${start.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
     `DTEND:${end.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
     `SUMMARY:${title} — ${coachName}`,
@@ -40,31 +47,35 @@ function generateIcs({ title, coachName, startTime, endTime, notes }: CalendarBu
 function getGoogleCalUrl({ title, coachName, startTime, endTime, notes }: CalendarButtonProps) {
   const start = new Date(startTime).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
   const end = new Date(endTime).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${title} — ${coachName}`)}&dates=${start}/${end}&details=${encodeURIComponent(notes || "Session")}`;
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`${title} — ${coachName}`)}&dates=${start}/${end}&details=${encodeURIComponent(notes || "Session booked via Suits & Stories")}`;
 }
 
 export function CalendarButtons(props: CalendarButtonProps) {
+  const isFull = props.variant === "full";
+
   return (
-    <div className="flex gap-1">
+    <div className={`flex flex-wrap gap-2 ${isFull ? "" : "justify-start"}`}>
       <button
         onClick={() => generateIcs(props)}
-        className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border text-xs hover:bg-muted transition-colors"
-        title="Download .ics file"
+        className={`inline-flex items-center gap-1.5 rounded-lg border border-border bg-background/70 font-medium text-foreground transition-colors hover:bg-muted ${
+          isFull ? "px-3 py-2 text-sm" : "px-2.5 py-1.5 text-xs"
+        }`}
+        title="Download a calendar file for Apple Calendar, Outlook, or other calendar apps"
       >
-        <CalendarIcon className="h-3.5 w-3.5" />
-        .ics
+        <ArrowDownTrayIcon className={isFull ? "h-4 w-4" : "h-3.5 w-3.5"} />
+        {isFull ? "Apple / Outlook" : "Calendar file"}
       </button>
       <a
         href={getGoogleCalUrl(props)}
         target="_blank"
         rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-border text-xs hover:bg-muted transition-colors"
+        className={`inline-flex items-center gap-1.5 rounded-lg border border-border bg-background/70 font-medium text-foreground transition-colors hover:bg-muted ${
+          isFull ? "px-3 py-2 text-sm" : "px-2.5 py-1.5 text-xs"
+        }`}
         title="Add to Google Calendar"
       >
-        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M19.5 3h-3V1.5h-1.5V3h-6V1.5H7.5V3h-3C3.675 3 3 3.675 3 4.5v15c0 .825.675 1.5 1.5 1.5h15c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zm0 16.5h-15V8.25h15v11.25z"/>
-        </svg>
-        GCal
+        <CalendarDaysIcon className={isFull ? "h-4 w-4" : "h-3.5 w-3.5"} />
+        Google
       </a>
     </div>
   );

@@ -7,6 +7,7 @@ import { CalendarButtons } from "./calendar-buttons";
 import {
   ClockIcon,
   CalendarIcon,
+  UserIcon,
 } from "@heroicons/react/24/outline";
 
 export default async function BookingsPage() {
@@ -71,61 +72,83 @@ export default async function BookingsPage() {
             {upcomingBookings.map((booking) => (
               <div
                 key={booking.id}
-                className="rounded-xl border border-border bg-card p-5"
+                className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    {/* Show client avatar for coaches, coach avatar for clients */}
-                    {isCoachOrAdmin ? (
-                      <UserAvatar src={booking.client.image} name={booking.client.name} size="md" />
-                    ) : (
-                      <UserAvatar src={booking.coach.image} name={booking.coach.name} size="md" />
-                    )}
-                    <div className="space-y-1">
-                      <h3 className="font-medium text-foreground">{booking.service.title}</h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <CalendarIcon className="h-4 w-4" />
-                          {new Date(booking.startTime).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <ClockIcon className="h-4 w-4" />
-                          {new Date(booking.startTime).toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                          {" — "}
-                          {new Date(booking.endTime).toLocaleTimeString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                        <span>
-                          {isCoachOrAdmin
-                            ? `${booking.client.name} · ${booking.client.email}`
-                            : `with ${booking.coach.name}`}
-                        </span>
+                <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-stretch lg:justify-between">
+                  <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row">
+                    <DateTile date={booking.startTime} />
+
+                    <div className="min-w-0 flex-1 space-y-3">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <h3 className="text-lg font-medium text-foreground">
+                            {booking.service.title}
+                          </h3>
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
+                              <ClockIcon className="h-4 w-4" />
+                              {new Date(booking.startTime).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                              {" - "}
+                              {new Date(booking.endTime).toLocaleTimeString("en-US", {
+                                hour: "numeric",
+                                minute: "2-digit",
+                              })}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
+                              <UserIcon className="h-4 w-4" />
+                              {isCoachOrAdmin
+                                ? `${booking.client.name || "Client"} · ${booking.client.email || "No email"}`
+                                : `with ${booking.coach.name || "Coach"}`}
+                            </span>
+                          </div>
+                        </div>
+                        <StatusBadge status={booking.status} />
                       </div>
+
+                      <div className="flex items-center gap-3">
+                        {isCoachOrAdmin ? (
+                          <UserAvatar src={booking.client.image} name={booking.client.name} size="md" />
+                        ) : (
+                          <UserAvatar src={booking.coach.image} name={booking.coach.name} size="md" />
+                        )}
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {isCoachOrAdmin ? booking.client.name || "Client" : booking.coach.name || "Coach"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {isCoachOrAdmin ? "Client session" : "Your session lead"}
+                          </p>
+                        </div>
+                      </div>
+
                       {booking.notes && (
-                        <p className="text-xs text-muted-foreground mt-1 italic">
-                          &ldquo;{booking.notes}&rdquo;
-                        </p>
+                        <div className="rounded-xl border border-border bg-background/60 px-4 py-3">
+                          <p className="text-sm italic leading-relaxed text-muted-foreground">
+                            &ldquo;{booking.notes}&rdquo;
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <CalendarButtons
-                      title={booking.service.title}
-                      coachName={booking.coach.name || "Coach"}
-                      startTime={booking.startTime.toISOString()}
-                      endTime={booking.endTime.toISOString()}
-                      notes={booking.notes}
-                    />
-                    <StatusBadge status={booking.status} />
+
+                  <div className="flex shrink-0 flex-col gap-3 border-t border-border pt-4 lg:w-64 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
+                    <div>
+                      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        Add to calendar
+                      </p>
+                      <CalendarButtons
+                        title={booking.service.title}
+                        coachName={booking.coach.name || "Coach"}
+                        startTime={booking.startTime.toISOString()}
+                        endTime={booking.endTime.toISOString()}
+                        notes={booking.notes}
+                        variant="full"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2">
                     {/* Coach actions: confirm, complete, no-show */}
                     {isCoachOrAdmin && booking.status === "PENDING" && (
                       <BookingActions bookingId={booking.id} actions={["CONFIRMED", "CANCELLED"]} />
@@ -137,6 +160,7 @@ export default async function BookingsPage() {
                     {!isCoachOrAdmin && booking.status !== "CANCELLED" && (
                       <BookingActions bookingId={booking.id} actions={["CANCELLED"]} />
                     )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -225,16 +249,32 @@ export default async function BookingsPage() {
   );
 }
 
+function DateTile({ date }: { date: Date }) {
+  return (
+    <div className="flex h-24 w-full shrink-0 items-center justify-between rounded-xl border border-primary/15 bg-primary/5 px-4 sm:w-24 sm:flex-col sm:justify-center sm:px-3">
+      <span className="text-xs font-medium uppercase tracking-wider text-primary">
+        {new Date(date).toLocaleDateString("en-US", { weekday: "short" })}
+      </span>
+      <span className="font-serif text-3xl text-foreground">
+        {new Date(date).toLocaleDateString("en-US", { day: "2-digit" })}
+      </span>
+      <span className="text-xs text-muted-foreground">
+        {new Date(date).toLocaleDateString("en-US", { month: "short" })}
+      </span>
+    </div>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
-    PENDING: "bg-amber-500/10 text-amber-600",
-    CONFIRMED: "bg-emerald-500/10 text-emerald-600",
+    PENDING: "bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20",
+    CONFIRMED: "bg-emerald-500/10 text-emerald-600 ring-1 ring-emerald-500/20",
     CANCELLED: "bg-red-500/10 text-red-500",
     COMPLETED: "bg-blue-500/10 text-blue-600",
     NO_SHOW: "bg-muted text-muted-foreground",
   };
   return (
-    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${styles[status] || "bg-muted"}`}>
+    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium capitalize ${styles[status] || "bg-muted"}`}>
       {status.toLowerCase().replace("_", " ")}
     </span>
   );

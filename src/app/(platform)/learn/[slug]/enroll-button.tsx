@@ -30,11 +30,11 @@ export function EnrollButton({ courseId, price }: EnrollButtonProps) {
           setError(result.error || "Enrollment failed");
         }
       } else {
-        // Paid enrollment — redirect to PayStack
+        // Paid enrollment — open the native checkout first.
         const result = await initCoursePayment(courseId);
-        if (result.success && result.paymentUrl) {
-          window.location.href = result.paymentUrl;
-          return; // Don't reset loading — page is navigating away
+        if (result.success && result.checkoutUrl) {
+          router.push(result.checkoutUrl);
+          return;
         } else {
           setError(result.error || "Payment init failed");
         }

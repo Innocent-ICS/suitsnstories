@@ -3,11 +3,32 @@
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import type { Prisma } from "@prisma/client";
 import {
   initializeTransaction,
   verifyTransaction,
   generateReference,
 } from "@/lib/paystack";
+
+type CoursePaymentData = {
+  type: "course_enrollment";
+  courseId: string;
+  courseTitle: string;
+  authorizationUrl?: string;
+  accessCode?: string;
+};
+
+type BookingPaymentData = {
+  type: "booking";
+  serviceId: string;
+  serviceTitle: string;
+  coachId: string;
+  startTime: string;
+  endTime: string;
+  notes: string | null;
+  authorizationUrl?: string;
+  accessCode?: string;
+};
 
 // ── Auth ───────────────────────────────────────────────────────────────
 
@@ -15,6 +36,57 @@ async function requireAuth() {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Not authenticated");
   return session.user.id;
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Payment init failed";
+}
+
+function toJsonObject(data: Record<string, unknown>): Prisma.InputJsonObject {
+  return data as Prisma.InputJsonObject;
+}
+
+function withVerification(
+  providerData: unknown,
+  verification: unknown
+): Prisma.InputJsonObject {
+  const data =
+    typeof providerData === "object" && providerData !== null
+      ? (providerData as Record<string, unknown>)
+      : {};
+
+  return toJsonObject({
+    ...data,
+    verification,
+  });
+}
+
+function isCoursePaymentData(meta: unknown): meta is CoursePaymentData {
+  return (
+    typeof meta === "object" &&
+    meta !== null &&
+    "type" in meta &&
+    meta.type === "course_enrollment" &&
+    "courseId" in meta &&
+    typeof meta.courseId === "string"
+  );
+}
+
+function isBookingPaymentData(meta: unknown): meta is BookingPaymentData {
+  return (
+    typeof meta === "object" &&
+    meta !== null &&
+    "type" in meta &&
+    meta.type === "booking" &&
+    "serviceId" in meta &&
+    typeof meta.serviceId === "string" &&
+    "coachId" in meta &&
+    typeof meta.coachId === "string" &&
+    "startTime" in meta &&
+    typeof meta.startTime === "string" &&
+    "endTime" in meta &&
+    typeof meta.endTime === "string"
+  );
 }
 
 // ── Initialize Payment for Course ──────────────────────────────────────
@@ -38,6 +110,11 @@ export async function initCoursePayment(courseId: string) {
   if (existing) return { success: false, error: "Already enrolled" };
 
   const reference = generateReference("course");
+  const providerData: CoursePaymentData = {
+    type: "course_enrollment",
+    courseId: course.id,
+    courseTitle: course.title,
+  };
 
   // Create pending payment record
   const payment = await db.payment.create({
@@ -47,11 +124,7 @@ export async function initCoursePayment(courseId: string) {
       currency: course.currency,
       provider: "paystack",
       providerRef: reference,
-      providerData: {
-        type: "course_enrollment",
-        courseId: course.id,
-        courseTitle: course.title,
-      },
+      providerData: toJsonObject(providerData),
     },
   });
 
@@ -71,11 +144,26 @@ export async function initCoursePayment(courseId: string) {
       },
     });
 
-    return { success: true, paymentUrl: tx.authorization_url };
-  } catch (error: any) {
+    await db.payment.update({
+      where: { id: payment.id },
+      data: {
+        providerData: toJsonObject({
+          ...providerData,
+          authorizationUrl: tx.authorization_url,
+          accessCode: tx.access_code,
+        }),
+      },
+    });
+
+    return {
+      success: true,
+      checkoutUrl: `/checkout/${reference}`,
+      paymentUrl: tx.authorization_url,
+    };
+  } catch (error: unknown) {
     // Clean up the pending payment
     await db.payment.delete({ where: { id: payment.id } });
-    return { success: false, error: error.message || "Payment init failed" };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -101,6 +189,15 @@ export async function initBookingPayment(
   const reference = generateReference("booking");
   const start = new Date(startTime);
   const end = new Date(start.getTime() + service.duration * 60 * 1000);
+  const providerData: BookingPaymentData = {
+    type: "booking",
+    serviceId: service.id,
+    serviceTitle: service.title,
+    coachId,
+    startTime: start.toISOString(),
+    endTime: end.toISOString(),
+    notes: notes || null,
+  };
 
   const payment = await db.payment.create({
     data: {
@@ -109,15 +206,7 @@ export async function initBookingPayment(
       currency: service.currency,
       provider: "paystack",
       providerRef: reference,
-      providerData: {
-        type: "booking",
-        serviceId: service.id,
-        serviceTitle: service.title,
-        coachId,
-        startTime: start.toISOString(),
-        endTime: end.toISOString(),
-        notes: notes || null,
-      },
+      providerData: toJsonObject(providerData),
     },
   });
 
@@ -138,10 +227,25 @@ export async function initBookingPayment(
       },
     });
 
-    return { success: true, paymentUrl: tx.authorization_url };
-  } catch (error: any) {
+    await db.payment.update({
+      where: { id: payment.id },
+      data: {
+        providerData: toJsonObject({
+          ...providerData,
+          authorizationUrl: tx.authorization_url,
+          accessCode: tx.access_code,
+        }),
+      },
+    });
+
+    return {
+      success: true,
+      checkoutUrl: `/checkout/${reference}`,
+      paymentUrl: tx.authorization_url,
+    };
+  } catch (error: unknown) {
     await db.payment.delete({ where: { id: payment.id } });
-    return { success: false, error: error.message || "Payment init failed" };
+    return { success: false, error: getErrorMessage(error) };
   }
 }
 
@@ -161,7 +265,10 @@ export async function fulfillPayment(reference: string) {
   if (tx.status !== "success") {
     await db.payment.update({
       where: { id: payment.id },
-      data: { status: "FAILED", providerData: tx as any },
+      data: {
+        status: "FAILED",
+        providerData: withVerification(payment.providerData, tx),
+      },
     });
     return { success: false, error: "Payment not successful" };
   }
@@ -169,24 +276,34 @@ export async function fulfillPayment(reference: string) {
   // Mark payment as complete
   await db.payment.update({
     where: { id: payment.id },
-    data: { status: "SUCCESS", providerData: tx as any },
+    data: {
+      status: "SUCCESS",
+      providerData: withVerification(payment.providerData, tx),
+    },
   });
 
   // Fulfill based on type
-  const meta = payment.providerData as any;
+  const meta = payment.providerData;
 
-  if (meta?.type === "course_enrollment") {
-    await db.enrollment.create({
-      data: {
+  if (isCoursePaymentData(meta)) {
+    await db.enrollment.upsert({
+      where: {
+        userId_courseId: {
+          userId: payment.userId,
+          courseId: meta.courseId,
+        },
+      },
+      create: {
         userId: payment.userId,
         courseId: meta.courseId,
         paymentId: payment.id,
       },
+      update: {},
     });
     revalidatePath("/learn");
   }
 
-  if (meta?.type === "booking") {
+  if (isBookingPaymentData(meta)) {
     // Check for conflicts first
     const conflict = await db.booking.findFirst({
       where: {
