@@ -1,6 +1,7 @@
 import { after, NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
+import { supabaseAdmin } from "@/lib/supabase";
 import { processPerceptoscopeAnalysis } from "@/lib/perceptoscope/agents";
 import { fingerprintBuffer, safeJsonText, validateDeckFile } from "@/lib/perceptoscope/security";
 import { checkRateLimit } from "@/lib/security/rate-limit";
@@ -10,6 +11,7 @@ import {
 } from "@/lib/security/request";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const requestContext = getRequestSecurityContext(req);
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const rateLimit = await checkRateLimit({
-      scope: "perceptoscope-upload",
+      scope: "perceptoscope-analysis",
       identifier: userId,
       limit: 8,
       windowMs: 60 * 60 * 1000,
@@ -43,27 +45,58 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const formData = await req.formData();
-    const rawFile = formData.get("file");
-    const title = safeJsonText(formData.get("title"), "Pitch diagnosis").slice(0, 160) || "Pitch diagnosis";
-    const founderContext = safeJsonText(formData.get("founderContext"), "");
-    const projectId = safeJsonText(formData.get("projectId"), "") || null;
-    const preferredProvider = safeJsonText(formData.get("provider"), "") || null;
+    const body = (await req.json()) as {
+      storagePath?: string;
+      fileName?: string;
+      fileType?: string;
+      fileSize?: number;
+      title?: string;
+      founderContext?: string;
+      projectId?: string;
+      provider?: string;
+    };
 
-    if (!(rawFile instanceof File)) {
-      return NextResponse.json({ error: "Upload a pitch deck file." }, { status: 400 });
+    const title = safeJsonText(body.title, "Pitch diagnosis").slice(0, 160) || "Pitch diagnosis";
+    const founderContext = safeJsonText(body.founderContext, "");
+    const projectId = safeJsonText(body.projectId, "") || null;
+    const preferredProvider = safeJsonText(body.provider, "") || null;
+
+    // --- Download the file from Supabase Storage ---
+    if (!body.storagePath || !body.fileName || !body.fileSize) {
+      return NextResponse.json(
+        { error: "storagePath, fileName, and fileSize are required." },
+        { status: 400 }
+      );
     }
 
-    const buffer = Buffer.from(await rawFile.arrayBuffer());
+    if (!supabaseAdmin) {
+      return NextResponse.json({ error: "Storage is not configured." }, { status: 503 });
+    }
+
+    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+      .from("decks")
+      .download(body.storagePath);
+
+    if (downloadError || !fileData) {
+      console.error("[PERCEPTOSCOPE_DOWNLOAD]", downloadError);
+      return NextResponse.json(
+        { error: "Could not retrieve the uploaded file. Please try again." },
+        { status: 400 }
+      );
+    }
+
+    const buffer = Buffer.from(await fileData.arrayBuffer());
     const uploadedFile = {
-      name: rawFile.name,
-      type: rawFile.type,
-      size: rawFile.size,
+      name: body.fileName,
+      type: body.fileType || "application/octet-stream",
+      size: body.fileSize,
       buffer,
     };
 
     const validation = validateDeckFile(uploadedFile);
     if (!validation.ok) {
+      // Clean up the storage file
+      await supabaseAdmin.storage.from("decks").remove([body.storagePath]);
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
@@ -81,8 +114,8 @@ export async function POST(req: NextRequest) {
         title,
         founderContext: founderContext || null,
         fileName: validation.safeName,
-        fileMimeType: rawFile.type || "application/octet-stream",
-        fileSize: rawFile.size,
+        fileMimeType: uploadedFile.type,
+        fileSize: uploadedFile.size,
         fileFingerprint: fingerprintBuffer(buffer),
         status: "PENDING",
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
@@ -90,14 +123,21 @@ export async function POST(req: NextRequest) {
       select: { id: true },
     });
 
-    after(() => {
-      void processPerceptoscopeAnalysis({
-        analysisId: analysis.id,
-        userId,
-        file: uploadedFile,
-        founderContext,
-        preferredProvider,
-      });
+    // Schedule background processing, then clean up storage
+    const storagePath = body.storagePath;
+    after(async () => {
+      try {
+        await processPerceptoscopeAnalysis({
+          analysisId: analysis.id,
+          userId,
+          file: uploadedFile,
+          founderContext,
+          preferredProvider,
+        });
+      } finally {
+        // Always clean up the temporary storage file
+        await supabaseAdmin?.storage.from("decks").remove([storagePath]);
+      }
     });
 
     return NextResponse.json({ analysisId: analysis.id, status: "PENDING" }, { status: 202 });

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import type { DeckFileKind, UploadedDeckFile } from "./types";
 
-const MAX_FILE_SIZE = 60 * 1024 * 1024;
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 const MAX_TEXT_CHARS = 70000;
 
 const FILE_SIGNATURES: Record<DeckFileKind, readonly string[]> = {
@@ -111,7 +111,7 @@ export function validateDeckFile(file: UploadedDeckFile) {
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return { ok: false as const, error: "File too large. The Perceptoscope accepts files up to 60MB." };
+    return { ok: false as const, error: "File too large. The Perceptoscope accepts files up to 20MB." };
   }
 
   return { ok: true as const, kind, safeName };

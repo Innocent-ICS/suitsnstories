@@ -100,43 +100,107 @@ export function PerceptoscopeConsole({
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const response = await fetch("/api/perceptoscope/analyses", {
-      method: "POST",
-      body: formData,
-    });
+    const file = formData.get("file") as File | null;
+    const title = String(formData.get("title") || "Pitch diagnosis");
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      setError(payload?.error || "Could not start the Perceptoscope.");
+    if (!file || file.size === 0) {
+      setError("Please select a file to upload.");
       setSubmitting(false);
       return;
     }
 
-    const payload = (await response.json()) as { analysisId: string };
-    const file = formData.get("file") as File | null;
-    const title = String(formData.get("title") || "Pitch diagnosis");
-    const pending: AnalysisListItem = {
-      id: payload.analysisId,
-      title,
-      status: "PENDING",
-      score: null,
-      riskLevel: null,
-      summary: null,
-      report: null,
-      error: null,
-      fileName: file?.name || "Deck",
-      provider: null,
-      model: null,
-      createdAt: new Date().toISOString(),
-      completedAt: null,
-      agentRuns: [],
-    };
+    try {
+      // Step 1: Get a signed upload URL from the server
+      const urlResponse = await fetch("/api/perceptoscope/upload-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+        }),
+      });
 
-    setAnalyses((current) => upsertAnalysis(current, pending));
-    setActiveId(payload.analysisId);
-    form.reset();
-    setSubmitting(false);
+      if (!urlResponse.ok) {
+        const payload = (await urlResponse.json().catch(() => null)) as { error?: string } | null;
+        setError(payload?.error || "Could not prepare the upload.");
+        setSubmitting(false);
+        return;
+      }
+
+      const { signedUrl, storagePath, token } = (await urlResponse.json()) as {
+        signedUrl: string;
+        storagePath: string;
+        token: string;
+      };
+
+      // Step 2: Upload the file directly to Supabase Storage
+      const uploadResponse = await fetch(signedUrl, {
+        method: "PUT",
+        headers: {
+          "Content-Type": file.type || "application/octet-stream",
+          "x-upsert": "true",
+        },
+        body: file,
+      });
+
+      if (!uploadResponse.ok) {
+        setError("File upload failed. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Step 3: Start the analysis with the storage path (small JSON body)
+      const analysisResponse = await fetch("/api/perceptoscope/analyses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storagePath,
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          title,
+          founderContext: String(formData.get("founderContext") || ""),
+          projectId: String(formData.get("projectId") || ""),
+          provider: String(formData.get("provider") || ""),
+        }),
+      });
+
+      if (!analysisResponse.ok) {
+        const payload = (await analysisResponse.json().catch(() => null)) as { error?: string } | null;
+        setError(payload?.error || "Could not start the Perceptoscope.");
+        setSubmitting(false);
+        return;
+      }
+
+      const payload = (await analysisResponse.json()) as { analysisId: string };
+      const pending: AnalysisListItem = {
+        id: payload.analysisId,
+        title,
+        status: "PENDING",
+        score: null,
+        riskLevel: null,
+        summary: null,
+        report: null,
+        error: null,
+        fileName: file.name,
+        provider: null,
+        model: null,
+        createdAt: new Date().toISOString(),
+        completedAt: null,
+        agentRuns: [],
+      };
+
+      setAnalyses((current) => upsertAnalysis(current, pending));
+      setActiveId(payload.analysisId);
+      form.reset();
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   }
+
 
   return (
     <div className="space-y-6">
