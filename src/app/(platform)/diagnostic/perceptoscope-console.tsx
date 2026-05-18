@@ -93,6 +93,9 @@ export function PerceptoscopeConsole({
     return () => window.clearInterval(interval);
   }, [activeAnalysis]);
 
+  /** Vercel serverless body limit — files under this can use the direct FormData fallback */
+  const DIRECT_UPLOAD_LIMIT = 4.5 * 1024 * 1024;
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -110,61 +113,25 @@ export function PerceptoscopeConsole({
     }
 
     try {
-      // Step 1: Get a signed upload URL from the server
-      const urlResponse = await fetch("/api/perceptoscope/upload-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-        }),
-      });
+      let analysisResponse: Response;
 
-      if (!urlResponse.ok) {
-        const payload = (await urlResponse.json().catch(() => null)) as { error?: string } | null;
-        setError(payload?.error || "Could not prepare the upload.");
+      // Try the storage upload path first
+      const storageResult = await tryStorageUpload(file, title, formData);
+
+      if (storageResult.ok) {
+        analysisResponse = storageResult.response;
+      } else if (storageResult.fallback && file.size < DIRECT_UPLOAD_LIMIT) {
+        // Storage unavailable but file is small — use direct FormData upload
+        analysisResponse = await fetch("/api/perceptoscope/analyses", {
+          method: "POST",
+          body: formData,
+        });
+      } else {
+        // Storage failed and file too large for fallback
+        setError(storageResult.error || "Could not upload the file.");
         setSubmitting(false);
         return;
       }
-
-      const { signedUrl, storagePath, token } = (await urlResponse.json()) as {
-        signedUrl: string;
-        storagePath: string;
-        token: string;
-      };
-
-      // Step 2: Upload the file directly to Supabase Storage
-      const uploadResponse = await fetch(signedUrl, {
-        method: "PUT",
-        headers: {
-          "Content-Type": file.type || "application/octet-stream",
-          "x-upsert": "true",
-        },
-        body: file,
-      });
-
-      if (!uploadResponse.ok) {
-        setError("File upload failed. Please try again.");
-        setSubmitting(false);
-        return;
-      }
-
-      // Step 3: Start the analysis with the storage path (small JSON body)
-      const analysisResponse = await fetch("/api/perceptoscope/analyses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storagePath,
-          fileName: file.name,
-          fileType: file.type,
-          fileSize: file.size,
-          title,
-          founderContext: String(formData.get("founderContext") || ""),
-          projectId: String(formData.get("projectId") || ""),
-          provider: String(formData.get("provider") || ""),
-        }),
-      });
 
       if (!analysisResponse.ok) {
         const payload = (await analysisResponse.json().catch(() => null)) as { error?: string } | null;
@@ -199,6 +166,61 @@ export function PerceptoscopeConsole({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  /** Try the 3-step storage upload. Returns { ok, response } or { fallback: true } if storage is unavailable. */
+  async function tryStorageUpload(
+    file: File,
+    title: string,
+    formData: FormData
+  ): Promise<{ ok: true; response: Response } | { ok: false; fallback: boolean; error?: string }> {
+    const urlResponse = await fetch("/api/perceptoscope/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, fileType: file.type, fileSize: file.size }),
+    });
+
+    // 503 = storage not configured — signal fallback
+    if (urlResponse.status === 503) {
+      return { ok: false, fallback: true };
+    }
+    if (!urlResponse.ok) {
+      const p = (await urlResponse.json().catch(() => null)) as { error?: string } | null;
+      return { ok: false, fallback: false, error: p?.error || "Could not prepare the upload." };
+    }
+
+    const { signedUrl, storagePath } = (await urlResponse.json()) as {
+      signedUrl: string;
+      storagePath: string;
+      token: string;
+    };
+
+    const uploadResponse = await fetch(signedUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream", "x-upsert": "true" },
+      body: file,
+    });
+
+    if (!uploadResponse.ok) {
+      return { ok: false, fallback: false, error: "File upload to storage failed." };
+    }
+
+    const analysisResponse = await fetch("/api/perceptoscope/analyses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storagePath,
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        title,
+        founderContext: String(formData.get("founderContext") || ""),
+        projectId: String(formData.get("projectId") || ""),
+        provider: String(formData.get("provider") || ""),
+      }),
+    });
+
+    return { ok: true, response: analysisResponse };
   }
 
 

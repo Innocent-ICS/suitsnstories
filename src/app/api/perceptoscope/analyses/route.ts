@@ -13,6 +13,14 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+/**
+ * Accepts two content types:
+ * 1. JSON — { storagePath, fileName, fileType, fileSize, ... }  (storage upload path)
+ * 2. FormData — file + title + founderContext + ...             (direct in-memory fallback)
+ *
+ * The client tries (1) first. If storage is unavailable and the file
+ * is small enough (<4.5MB), it falls back to (2).
+ */
 export async function POST(req: NextRequest) {
   const requestContext = getRequestSecurityContext(req);
   try {
@@ -38,65 +46,82 @@ export async function POST(req: NextRequest) {
     if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: "Too many diagnosis uploads. Please try again shortly." },
-        {
-          status: 429,
-          headers: { "Retry-After": String(rateLimit.retryAfter) },
-        }
+        { status: 429, headers: { "Retry-After": String(rateLimit.retryAfter) } }
       );
     }
 
-    const body = (await req.json()) as {
-      storagePath?: string;
-      fileName?: string;
-      fileType?: string;
-      fileSize?: number;
-      title?: string;
-      founderContext?: string;
-      projectId?: string;
-      provider?: string;
-    };
+    const contentType = req.headers.get("content-type") || "";
+    const isFormData = contentType.includes("multipart/form-data");
 
-    const title = safeJsonText(body.title, "Pitch diagnosis").slice(0, 160) || "Pitch diagnosis";
-    const founderContext = safeJsonText(body.founderContext, "");
-    const projectId = safeJsonText(body.projectId, "") || null;
-    const preferredProvider = safeJsonText(body.provider, "") || null;
+    let uploadedFile: { name: string; type: string; size: number; buffer: Buffer };
+    let title: string;
+    let founderContext: string;
+    let projectId: string | null;
+    let preferredProvider: string | null;
+    let storagePath: string | null = null;
 
-    // --- Download the file from Supabase Storage ---
-    if (!body.storagePath || !body.fileName || !body.fileSize) {
-      return NextResponse.json(
-        { error: "storagePath, fileName, and fileSize are required." },
-        { status: 400 }
-      );
+    if (isFormData) {
+      // --- Direct in-memory upload (FormData fallback) ---
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      if (!file || file.size === 0) {
+        return NextResponse.json({ error: "No file uploaded." }, { status: 400 });
+      }
+      const buffer = Buffer.from(await file.arrayBuffer());
+      uploadedFile = { name: file.name, type: file.type, size: file.size, buffer };
+      title = safeJsonText(String(formData.get("title") || ""), "Pitch diagnosis").slice(0, 160) || "Pitch diagnosis";
+      founderContext = safeJsonText(String(formData.get("founderContext") || ""), "");
+      projectId = safeJsonText(String(formData.get("projectId") || ""), "") || null;
+      preferredProvider = safeJsonText(String(formData.get("provider") || ""), "") || null;
+    } else {
+      // --- Storage upload path (JSON) ---
+      const body = (await req.json()) as {
+        storagePath?: string;
+        fileName?: string;
+        fileType?: string;
+        fileSize?: number;
+        title?: string;
+        founderContext?: string;
+        projectId?: string;
+        provider?: string;
+      };
+
+      title = safeJsonText(body.title, "Pitch diagnosis").slice(0, 160) || "Pitch diagnosis";
+      founderContext = safeJsonText(body.founderContext, "");
+      projectId = safeJsonText(body.projectId, "") || null;
+      preferredProvider = safeJsonText(body.provider, "") || null;
+
+      if (!body.storagePath || !body.fileName || !body.fileSize) {
+        return NextResponse.json({ error: "storagePath, fileName, and fileSize are required." }, { status: 400 });
+      }
+      if (!supabaseAdmin) {
+        return NextResponse.json({ error: "Storage is not configured." }, { status: 503 });
+      }
+
+      const { data: fileData, error: downloadError } = await supabaseAdmin.storage
+        .from("decks")
+        .download(body.storagePath);
+
+      if (downloadError || !fileData) {
+        console.error("[PERCEPTOSCOPE_DOWNLOAD]", downloadError);
+        return NextResponse.json({ error: "Could not retrieve the uploaded file. Please try again." }, { status: 400 });
+      }
+
+      const buffer = Buffer.from(await fileData.arrayBuffer());
+      uploadedFile = {
+        name: body.fileName,
+        type: body.fileType || "application/octet-stream",
+        size: body.fileSize,
+        buffer,
+      };
+      storagePath = body.storagePath;
     }
-
-    if (!supabaseAdmin) {
-      return NextResponse.json({ error: "Storage is not configured." }, { status: 503 });
-    }
-
-    const { data: fileData, error: downloadError } = await supabaseAdmin.storage
-      .from("decks")
-      .download(body.storagePath);
-
-    if (downloadError || !fileData) {
-      console.error("[PERCEPTOSCOPE_DOWNLOAD]", downloadError);
-      return NextResponse.json(
-        { error: "Could not retrieve the uploaded file. Please try again." },
-        { status: 400 }
-      );
-    }
-
-    const buffer = Buffer.from(await fileData.arrayBuffer());
-    const uploadedFile = {
-      name: body.fileName,
-      type: body.fileType || "application/octet-stream",
-      size: body.fileSize,
-      buffer,
-    };
 
     const validation = validateDeckFile(uploadedFile);
     if (!validation.ok) {
-      // Clean up the storage file
-      await supabaseAdmin.storage.from("decks").remove([body.storagePath]);
+      if (storagePath && supabaseAdmin) {
+        await supabaseAdmin.storage.from("decks").remove([storagePath]);
+      }
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
 
@@ -116,15 +141,14 @@ export async function POST(req: NextRequest) {
         fileName: validation.safeName,
         fileMimeType: uploadedFile.type,
         fileSize: uploadedFile.size,
-        fileFingerprint: fingerprintBuffer(buffer),
+        fileFingerprint: fingerprintBuffer(uploadedFile.buffer),
         status: "PENDING",
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       },
       select: { id: true },
     });
 
-    // Schedule background processing, then clean up storage
-    const storagePath = body.storagePath;
+    const capturedStoragePath = storagePath;
     after(async () => {
       try {
         await processPerceptoscopeAnalysis({
@@ -135,8 +159,9 @@ export async function POST(req: NextRequest) {
           preferredProvider,
         });
       } finally {
-        // Always clean up the temporary storage file
-        await supabaseAdmin?.storage.from("decks").remove([storagePath]);
+        if (capturedStoragePath) {
+          await supabaseAdmin?.storage.from("decks").remove([capturedStoragePath]);
+        }
       }
     });
 
