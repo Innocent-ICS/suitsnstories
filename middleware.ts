@@ -1,7 +1,8 @@
-import { auth } from "@/auth";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
 /**
- * Middleware for route protection and access control.
+ * Lightweight middleware for route protection and access control.
  * 
  * Route groups:
  * - (marketing)/* → Public, no auth required
@@ -9,15 +10,22 @@ import { auth } from "@/auth";
  * - (platform)/*  → Requires authentication (enforced by layout, middleware provides early redirect)
  * - (admin)/*     → Requires authentication + ADMIN role (enforced by layout)
  * - api/*         → Handled separately per route
+ * 
+ * Note: This middleware is optimized for Edge runtime to stay under 1MB size limit.
+ * Session validation happens in layouts/pages using auth() from @/auth.
  */
-export default auth((req) => {
-    const isLoggedIn = !!req.auth;
+export function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
+    
+    // Check for session token (NextAuth uses next-auth.session-token cookie)
+    const sessionToken = req.cookies.get("next-auth.session-token") || 
+                        req.cookies.get("__Secure-next-auth.session-token");
+    const isLoggedIn = !!sessionToken;
 
     // Auth routes: redirect logged-in users away from signin/signup
     const isAuthRoute = pathname.startsWith("/auth");
     if (isAuthRoute && isLoggedIn) {
-        return Response.redirect(new URL("/dashboard", req.nextUrl));
+        return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
     }
 
     // Protected platform routes: redirect unauthenticated users to signin
@@ -35,7 +43,7 @@ export default auth((req) => {
     if (isProtectedRoute && !isLoggedIn) {
         const signinUrl = new URL("/auth/signin", req.nextUrl);
         signinUrl.searchParams.set("callbackUrl", pathname);
-        return Response.redirect(signinUrl);
+        return NextResponse.redirect(signinUrl);
     }
 
     // Admin routes: redirect unauthenticated users (role check happens in layout)
@@ -48,11 +56,12 @@ export default auth((req) => {
         pathname.startsWith("/inquiries");
 
     if (isAdminRoute && !isLoggedIn) {
-        return Response.redirect(new URL("/auth/signin", req.nextUrl));
+        return NextResponse.redirect(new URL("/auth/signin", req.nextUrl));
     }
 
     // All other routes (marketing) are public — no action needed
-});
+    return NextResponse.next();
+}
 
 // Optionally, don't invoke Middleware on some paths
 export const config = {
