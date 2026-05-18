@@ -40,10 +40,13 @@ export default function SignUpPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background">
-            <div className="w-full max-w-md space-y-8 px-4">
+        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
+            <div className="w-full max-w-md space-y-6 sm:space-y-8">
                 <div className="text-center">
-                    <h2 className="mt-6 text-3xl font-bold tracking-tight">
+                    <Link href="/" className="text-xl sm:text-2xl font-serif text-primary">
+                        Suits &amp; Stories
+                    </Link>
+                    <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-bold tracking-tight">
                         Create an account
                     </h2>
                     <p className="mt-2 text-sm text-muted-foreground">
@@ -51,55 +54,55 @@ export default function SignUpPage() {
                     </p>
                 </div>
 
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+                <form className="space-y-4" onSubmit={handleSubmit}>
                     <div className="space-y-4">
                         <div>
-                            <Label htmlFor="name">Full Name</Label>
+                            <Label htmlFor="name" className="text-sm sm:text-base">Full Name</Label>
                             <Input
                                 id="name"
                                 name="name"
                                 type="text"
                                 autoComplete="name"
                                 required
-                                className="mt-1"
+                                className="mt-1 h-11"
                                 placeholder="Ex. John Doe"
                             />
                         </div>
                         <div>
-                            <Label htmlFor="email">Email address</Label>
+                            <Label htmlFor="email" className="text-sm sm:text-base">Email address</Label>
                             <Input
                                 id="email"
                                 name="email"
                                 type="email"
                                 autoComplete="email"
                                 required
-                                className="mt-1"
+                                className="mt-1 h-11"
                                 placeholder="Ex. you@example.com"
                             />
                         </div>
                         <div>
-                            <Label htmlFor="password">Password</Label>
+                            <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
                             <Input
                                 id="password"
                                 name="password"
                                 type="password"
                                 autoComplete="new-password"
                                 required
-                                className="mt-1"
+                                className="mt-1 h-11"
                                 placeholder="******"
                             />
                         </div>
                     </div>
 
                     {error && (
-                        <div className="text-sm text-red-500 text-center bg-red-500/10 p-2 rounded">
+                        <div className="text-sm text-red-500 text-center bg-red-500/10 p-3 rounded">
                             {error}
                         </div>
                     )}
 
                     <Button
                         type="submit"
-                        className="w-full"
+                        className="w-full h-11"
                         disabled={loading}
                     >
                         {loading ? <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" /> : null}
