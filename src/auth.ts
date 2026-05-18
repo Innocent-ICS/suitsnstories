@@ -23,12 +23,15 @@ import { type DefaultSession } from "next-auth";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     trustHost: true,
+    debug: process.env.NODE_ENV === "development",
     adapter: PrismaAdapter(db),
     session: { strategy: "jwt" },
     providers: [
         Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            clientId: process.env.GOOGLE_CLIENT_ID!,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+            // Allow linking Google accounts to existing email-password users
+            allowDangerousEmailAccountLinking: true,
         }),
         Credentials({
             name: "Credentials",
@@ -112,5 +115,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     pages: {
         signIn: "/auth/signin",
         error: "/auth/error",
-    }
+    },
+    logger: {
+        error(error) {
+            // Log auth errors server-side so they appear in Vercel function logs
+            console.error("[AUTH_ERROR]", {
+                message: error.message,
+                cause: error.cause,
+                name: error.name,
+            });
+        },
+        warn(code) {
+            console.warn("[AUTH_WARN]", code);
+        },
+    },
 });
