@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   updateProject,
@@ -11,12 +11,20 @@ import {
   addDeliverable,
   approveDeliverable,
   assignCoach,
+  inviteProjectCollaborator,
+  createProjectInviteLink,
+  removeProjectCollaborator,
+  revokeProjectInvitation,
 } from "@/actions/project";
 import {
   CheckCircleIcon,
   PaperClipIcon,
   ChatBubbleLeftIcon,
   ArrowLeftIcon,
+  TrashIcon,
+  UserPlusIcon,
+  UsersIcon,
+  LinkIcon,
 } from "@heroicons/react/24/outline";
 
 interface ProjectDetailProps {
@@ -30,6 +38,25 @@ interface ProjectDetailProps {
     dueDate: string | null;
     client: { id: string; name: string | null; image: string | null; email: string | null };
     coach: { id: string; name: string | null; image: string | null } | null;
+    collaborators: {
+      id: string;
+      role: string;
+      user: {
+        id: string;
+        name: string | null;
+        email: string | null;
+        image: string | null;
+        profile: { company: string | null } | null;
+      };
+    }[];
+    invitations: {
+      id: string;
+      email: string | null;
+      role: string;
+      scope: string;
+      expiresAt: string;
+      createdAt: string;
+    }[];
     deliverables: {
       id: string;
       title: string;
@@ -73,10 +100,22 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
   const router = useRouter();
   const [commentText, setCommentText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"VIEWER" | "COMMENTER" | "EDITOR">("COMMENTER");
+  const [inviteScope, setInviteScope] = useState<"ANYONE" | "COMPANY">("ANYONE");
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteMessage, setInviteMessage] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
 
   const isClient = project.client.id === currentUserId;
   const isCoach = project.coach?.id === currentUserId;
   const isAdmin = userRole === "ADMIN";
+  const currentCollaborator = project.collaborators.find((c) => c.user.id === currentUserId);
+  const isEditorCollaborator = currentCollaborator?.role === "EDITOR";
+  const isCommenterCollaborator = currentCollaborator?.role === "COMMENTER";
+  const canInviteCollaborators = isClient || isAdmin || isEditorCollaborator;
+  const canAddDeliverable = isClient || isAdmin || isEditorCollaborator;
+  const canComment = isClient || isCoach || isAdmin || isEditorCollaborator || isCommenterCollaborator;
 
   async function handleAddComment() {
     if (!commentText.trim()) return;
@@ -119,18 +158,72 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
     router.refresh();
   }
 
+  async function handleInviteCollaborator(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!inviteEmail.trim()) return;
+
+    setInviteLoading(true);
+    setInviteMessage(null);
+    const result = await inviteProjectCollaborator({
+      projectId: project.id,
+      email: inviteEmail,
+      role: inviteRole,
+      scope: inviteScope,
+    });
+
+    setInviteLoading(false);
+    if (result.success) {
+      setInviteEmail("");
+      setInviteLink(result.inviteUrl || null);
+      setInviteMessage(result.message || "Invitation sent");
+      router.refresh();
+    } else {
+      setInviteMessage(result.error || "Could not add collaborator");
+    }
+  }
+
+  async function handleCreateInviteLink() {
+    setInviteLoading(true);
+    setInviteMessage(null);
+    const result = await createProjectInviteLink({
+      projectId: project.id,
+      role: inviteRole,
+      scope: inviteScope,
+    });
+    setInviteLoading(false);
+
+    if (result.success && result.inviteUrl) {
+      setInviteLink(result.inviteUrl);
+      setInviteMessage("Invite link created");
+      await navigator.clipboard?.writeText(result.inviteUrl).catch(() => undefined);
+      router.refresh();
+    } else {
+      setInviteMessage(result.error || "Could not create invite link");
+    }
+  }
+
+  async function handleRemoveCollaborator(collaboratorId: string) {
+    await removeProjectCollaborator(project.id, collaboratorId);
+    router.refresh();
+  }
+
+  async function handleRevokeInvitation(invitationId: string) {
+    await revokeProjectInvitation(project.id, invitationId);
+    router.refresh();
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <a href="/projects" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mb-4">
+        <Link href="/projects" className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1 mb-4">
           <ArrowLeftIcon className="h-3.5 w-3.5" />
           Back to projects
-        </a>
+        </Link>
 
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-2xl font-serif text-foreground">{project.title}</h1>
               <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${statusStyles[project.status]}`}>
                 {statusLabels[project.status]}
@@ -146,7 +239,7 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
             <select
               value={project.status}
               onChange={(e) => handleStatusChange(e.target.value)}
-              className="rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm sm:w-auto"
             >
               {Object.entries(statusLabels).map(([val, label]) => (
                 <option key={val} value={val}>{label}</option>
@@ -194,11 +287,11 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
             {project.deliverables.length > 0 && (
               <div className="space-y-2 mb-4">
                 {project.deliverables.map((d) => (
-                  <div key={d.id} className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/10">
-                    <div className="flex items-center gap-3">
+                  <div key={d.id} className="flex flex-col gap-3 rounded-lg border border-border bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex min-w-0 items-center gap-3">
                       <PaperClipIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{d.title}</p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">{d.title}</p>
                         <p className="text-xs text-muted-foreground">
                           v{d.version} · {new Date(d.createdAt).toLocaleDateString()}
                           {d.fileUrl && (
@@ -225,8 +318,8 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
             )}
 
             {/* Add deliverable (client only) */}
-            {isClient && (
-              <form onSubmit={handleAddDeliverable} className="flex gap-2">
+            {canAddDeliverable && (
+              <form onSubmit={handleAddDeliverable} className="flex flex-col gap-2 sm:flex-row">
                 <input
                   name="title"
                   required
@@ -276,18 +369,20 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
               )}
             </div>
 
-            <div className="flex gap-2">
-              <textarea
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                rows={2}
-                placeholder="Write a comment..."
-                className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-              <Button onClick={handleAddComment} disabled={saving || !commentText.trim()} size="sm" className="self-end">
-                {saving ? "..." : "Send"}
-              </Button>
-            </div>
+            {canComment && (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <textarea
+                  value={commentText}
+                  onChange={(e) => setCommentText(e.target.value)}
+                  rows={2}
+                  placeholder="Write a comment..."
+                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                />
+                <Button onClick={handleAddComment} disabled={saving || !commentText.trim()} size="sm" className="self-end sm:self-auto">
+                  {saving ? "..." : "Send"}
+                </Button>
+              </div>
+            )}
           </section>
         </div>
 
@@ -299,9 +394,9 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
               <p className="text-xs text-muted-foreground uppercase tracking-wider">Client</p>
               <div className="flex items-center gap-2 mt-1.5">
                 <UserAvatar src={project.client.image} name={project.client.name} />
-                <div>
+                <div className="min-w-0">
                   <p className="text-sm font-medium">{project.client.name}</p>
-                  <p className="text-xs text-muted-foreground">{project.client.email}</p>
+                  <p className="break-all text-xs text-muted-foreground">{project.client.email}</p>
                 </div>
               </div>
             </div>
@@ -326,6 +421,129 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
                 </select>
               ) : (
                 <p className="text-sm text-muted-foreground mt-1.5">Not assigned yet</p>
+              )}
+            </div>
+
+            <div className="border-t border-border pt-4">
+              <p className="flex items-center gap-1.5 text-xs uppercase tracking-wider text-muted-foreground">
+                <UsersIcon className="h-3.5 w-3.5" />
+                Collaborators
+              </p>
+
+              {project.collaborators.length > 0 ? (
+                <div className="mt-3 space-y-3">
+                  {project.collaborators.map((collaborator) => (
+                    <div key={collaborator.id} className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <UserAvatar src={collaborator.user.image} name={collaborator.user.name} />
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {collaborator.user.name || collaborator.user.email}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {collaborator.user.profile?.company || formatCollaboratorRole(collaborator.role)}
+                          </p>
+                        </div>
+                      </div>
+                      {canInviteCollaborators && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCollaborator(collaborator.id)}
+                          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                          aria-label="Remove collaborator"
+                        >
+                          <TrashIcon className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">No teammates added.</p>
+              )}
+
+              {project.invitations.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                    Pending invites
+                  </p>
+                  {project.invitations.map((invite) => (
+                    <div key={invite.id} className="rounded-lg border border-border bg-muted/20 p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {invite.email || `${invite.scope.toLowerCase()} link`}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatCollaboratorRole(invite.role)} · expires {new Date(invite.expiresAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {canInviteCollaborators && (
+                          <button
+                            type="button"
+                            onClick={() => handleRevokeInvitation(invite.id)}
+                            className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                            aria-label="Revoke invitation"
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {canInviteCollaborators && (
+                <form onSubmit={handleInviteCollaborator} className="mt-4 space-y-2">
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="person@example.com"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <select
+                      value={inviteRole}
+                      onChange={(e) => setInviteRole(e.target.value as "VIEWER" | "COMMENTER" | "EDITOR")}
+                      className="rounded-md border border-input bg-background px-2 py-2 text-sm"
+                    >
+                      <option value="VIEWER">View</option>
+                      <option value="COMMENTER">Comment</option>
+                      <option value="EDITOR">Edit</option>
+                    </select>
+                    <select
+                      value={inviteScope}
+                      onChange={(e) => setInviteScope(e.target.value as "ANYONE" | "COMPANY")}
+                      className="rounded-md border border-input bg-background px-2 py-2 text-sm"
+                    >
+                      <option value="ANYONE">Anyone</option>
+                      <option value="COMPANY">Company only</option>
+                    </select>
+                  </div>
+                  <Button type="submit" size="sm" disabled={inviteLoading || !inviteEmail.trim()} className="w-full gap-1.5">
+                    <UserPlusIcon className="h-4 w-4" />
+                    {inviteLoading ? "Sending..." : "Invite by email"}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" disabled={inviteLoading} onClick={handleCreateInviteLink} className="w-full gap-1.5">
+                    <LinkIcon className="h-4 w-4" />
+                    Create invite link
+                  </Button>
+                  {inviteLink && (
+                    <input
+                      readOnly
+                      value={inviteLink}
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="w-full rounded-md border border-input bg-muted px-3 py-2 text-xs text-muted-foreground"
+                    />
+                  )}
+                  {inviteMessage && (
+                    <p className={`text-xs ${inviteMessage.includes("Could not") || inviteMessage.includes("Only") ? "text-destructive" : "text-emerald-600"}`}>
+                      {inviteMessage}
+                    </p>
+                  )}
+                </form>
               )}
             </div>
 
@@ -368,4 +586,13 @@ function FeedbackEditor({ initial, onSave }: { initial: string; onSave: (v: stri
       )}
     </div>
   );
+}
+
+function formatCollaboratorRole(role: string) {
+  const labels: Record<string, string> = {
+    VIEWER: "Can view",
+    COMMENTER: "Can comment",
+    EDITOR: "Can edit",
+  };
+  return labels[role] || role.toLowerCase();
 }

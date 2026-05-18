@@ -12,6 +12,8 @@ import {
   UsersIcon,
   DocumentTextIcon,
   InboxIcon,
+  RocketLaunchIcon,
+  ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
 import type { UserRole } from "@/types/auth";
 
@@ -26,7 +28,15 @@ const clientNav: NavItem[] = [
   { label: "Learn", href: "/learn", icon: AcademicCapIcon },
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
-  { label: "Diagnostics", href: "/diagnostic", icon: BeakerIcon },
+  { label: "Narratometer", href: "/diagnostic", icon: BeakerIcon },
+];
+
+const programManagerNav: NavItem[] = [
+  { label: "Dashboard", href: "/dashboard", icon: HomeIcon },
+  { label: "Programs", href: "/programs", icon: RocketLaunchIcon },
+  { label: "Projects", href: "/projects", icon: FolderIcon },
+  { label: "Learn", href: "/learn", icon: AcademicCapIcon },
+  { label: "Bookings", href: "/bookings", icon: CalendarIcon },
 ];
 
 const coachNav: NavItem[] = [
@@ -46,18 +56,22 @@ const adminNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: HomeIcon },
   { label: "Learn", href: "/learn", icon: AcademicCapIcon },
   { label: "Projects", href: "/projects", icon: FolderIcon },
+  { label: "Programs", href: "/programs", icon: RocketLaunchIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
-  { label: "Diagnostics", href: "/diagnostic", icon: BeakerIcon },
+  { label: "Narratometer", href: "/diagnostic", icon: BeakerIcon },
+  { label: "AI Security", href: "/narratometer-security", icon: ShieldCheckIcon },
   { label: "Content", href: "/content", icon: DocumentTextIcon },
   { label: "Services", href: "/services-admin", icon: CalendarIcon },
   { label: "Users", href: "/clients", icon: UsersIcon },
   { label: "Inquiries", href: "/inquiries", icon: InboxIcon },
 ];
 
-function getNavForRole(role: UserRole): NavItem[] {
+export function getNavForRole(role: UserRole): NavItem[] {
   switch (role) {
     case "ADMIN":
       return adminNav;
+    case "PROGRAM_MANAGER":
+      return programManagerNav;
     case "COACH":
       return coachNav;
     case "PERCEPTION_ENGINEER":

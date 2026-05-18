@@ -25,6 +25,22 @@ const securityHeaders = [
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=()",
   },
+  {
+    key: "Content-Security-Policy",
+    value: [
+      "default-src 'self'",
+      "base-uri 'self'",
+      "object-src 'none'",
+      "frame-ancestors 'self'",
+      "form-action 'self' https://checkout.paystack.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
+      "font-src 'self' data:",
+      "connect-src 'self' https://api.paystack.co https://api.groq.com https://openrouter.ai https://*.supabase.co",
+      "frame-src 'self' https://checkout.paystack.com https://js.paystack.co",
+    ].join("; "),
+  },
 ];
 
 const nextConfig: NextConfig = {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,17 @@ import { Label } from "@/components/ui/label";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function SignInPage() {
+    return (
+        <Suspense fallback={<SignInShell />}>
+            <SignInForm />
+        </Suspense>
+    );
+}
+
+function SignInForm() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
@@ -34,10 +44,10 @@ export default function SignInPage() {
             if (result?.error) {
                 setError("Invalid email or password");
             } else {
-                router.push("/dashboard");
+                router.push(callbackUrl);
                 router.refresh();
             }
-        } catch (error) {
+        } catch {
             setError("Something went wrong");
         } finally {
             setLoading(false);
@@ -46,7 +56,7 @@ export default function SignInPage() {
 
     async function handleGoogleSignIn() {
         setGoogleLoading(true);
-        await signIn("google", { callbackUrl: "/dashboard" });
+        await signIn("google", { callbackUrl });
     }
 
     return (
@@ -156,6 +166,24 @@ export default function SignInPage() {
                         </Link>
                     </p>
                 </form>
+            </div>
+        </div>
+    );
+}
+
+function SignInShell() {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-background">
+            <div className="w-full max-w-md space-y-8 px-4 text-center">
+                <Link href="/" className="text-2xl font-serif text-primary">
+                    Suits &amp; Stories
+                </Link>
+                <h2 className="mt-6 text-3xl font-bold tracking-tight">
+                    Welcome back
+                </h2>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Loading sign in...
+                </p>
             </div>
         </div>
     );

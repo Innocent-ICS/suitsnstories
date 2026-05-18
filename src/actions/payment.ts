@@ -9,6 +9,12 @@ import {
   verifyTransaction,
   generateReference,
 } from "@/lib/paystack";
+import { fulfillAcceleratorProgramPayment } from "@/actions/program";
+import { auditSecurityEvent } from "@/lib/security/audit-log";
+import {
+  assertSameOriginRequest,
+  getServerActionSecurityContext,
+} from "@/lib/security/request";
 
 type CoursePaymentData = {
   type: "course_enrollment";
@@ -30,9 +36,23 @@ type BookingPaymentData = {
   accessCode?: string;
 };
 
+type ProgramPaymentData = {
+  type: "accelerator_program";
+  programId: string;
+  programName: string;
+  courseId: string;
+  courseTitle: string;
+  seatCount: number;
+  authorizationUrl?: string;
+  accessCode?: string;
+};
+
 // ── Auth ───────────────────────────────────────────────────────────────
 
 async function requireAuth() {
+  const requestContext = await getServerActionSecurityContext();
+  assertSameOriginRequest(requestContext);
+
   const session = await auth();
   if (!session?.user?.id) throw new Error("Not authenticated");
   return session.user.id;
@@ -86,6 +106,19 @@ function isBookingPaymentData(meta: unknown): meta is BookingPaymentData {
     typeof meta.startTime === "string" &&
     "endTime" in meta &&
     typeof meta.endTime === "string"
+  );
+}
+
+function isProgramPaymentData(meta: unknown): meta is ProgramPaymentData {
+  return (
+    typeof meta === "object" &&
+    meta !== null &&
+    "type" in meta &&
+    meta.type === "accelerator_program" &&
+    "programId" in meta &&
+    typeof meta.programId === "string" &&
+    "courseId" in meta &&
+    typeof meta.courseId === "string"
   );
 }
 
@@ -270,6 +303,18 @@ export async function fulfillPayment(reference: string) {
         providerData: withVerification(payment.providerData, tx),
       },
     });
+    await auditSecurityEvent({
+      actorId: payment.userId,
+      action: "PAYMENT_FULFILLMENT_FAILED",
+      targetType: "Payment",
+      targetId: payment.id,
+      outcome: "FAILED",
+      metadata: {
+        provider: payment.provider,
+        providerRef: reference,
+        providerStatus: tx.status,
+      },
+    });
     return { success: false, error: "Payment not successful" };
   }
 
@@ -316,6 +361,19 @@ export async function fulfillPayment(reference: string) {
 
     if (conflict) {
       // Refund would go here — for now mark as needs attention
+      await auditSecurityEvent({
+        actorId: payment.userId,
+        action: "PAYMENT_FULFILLMENT_FAILED",
+        targetType: "Payment",
+        targetId: payment.id,
+        outcome: "FAILED",
+        metadata: {
+          provider: payment.provider,
+          providerRef: reference,
+          type: "booking",
+          reason: "booking_conflict",
+        },
+      });
       return { success: false, error: "Time slot no longer available — refund pending" };
     }
 
@@ -333,6 +391,23 @@ export async function fulfillPayment(reference: string) {
     });
     revalidatePath("/bookings");
   }
+
+  if (isProgramPaymentData(meta)) {
+    await fulfillAcceleratorProgramPayment(meta.programId, payment.id);
+    revalidatePath("/programs");
+  }
+
+  await auditSecurityEvent({
+    actorId: payment.userId,
+    action: "PAYMENT_FULFILLED",
+    targetType: "Payment",
+    targetId: payment.id,
+    metadata: {
+      provider: payment.provider,
+      providerRef: reference,
+      type: typeof meta === "object" && meta !== null && "type" in meta ? meta.type : "unknown",
+    },
+  });
 
   return { success: true };
 }

@@ -62,7 +62,7 @@ export async function updateUserRole(
       return { success: false, error: "Unauthorized" };
     }
 
-    const validRoles = ["CLIENT", "COACH", "PERCEPTION_ENGINEER", "ADMIN"];
+    const validRoles = ["CLIENT", "COACH", "PERCEPTION_ENGINEER", "PROGRAM_MANAGER", "ADMIN"];
     if (!validRoles.includes(role)) {
       return { success: false, error: "Invalid role" };
     }

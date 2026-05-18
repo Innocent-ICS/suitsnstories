@@ -13,48 +13,57 @@ enum UserRole {
   CLIENT
   COACH
   PERCEPTION_ENGINEER
+  PROGRAM_MANAGER
   ADMIN
 }
 
 // ── Auth Models ────────────────────────────────────────────────────────
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  password      String?
-  emailVerified DateTime?
-  image         String?
-  role          UserRole  @default(CLIENT)
-  accounts      Account[]
-  sessions      Session[]
-  profile       Profile?
-  enrollments   Enrollment[]
-  quizAttempts  QuizAttempt[]
-  payments      Payment[]
-  availability  Availability[] @relation("CoachAvailability")
-  clientBookings Booking[]     @relation("ClientBookings")
-  coachBookings  Booking[]     @relation("CoachBookings")
-  ownedProjects  Project[]     @relation("ProjectOwner")
-  assignedProjects Project[]   @relation("ProjectCoach")
-  comments       ProjectComment[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                         String                 @id @default(cuid())
+  name                       String?
+  email                      String?                @unique
+  password                   String?
+  emailVerified              DateTime?
+  image                      String?
+  role                       UserRole               @default(CLIENT)
+  accounts                   Account[]
+  sessions                   Session[]
+  profile                    Profile?
+  enrollments                Enrollment[]
+  quizAttempts               QuizAttempt[]
+  payments                   Payment[]
+  availability               Availability[]         @relation("CoachAvailability")
+  clientBookings             Booking[]              @relation("ClientBookings")
+  coachBookings              Booking[]              @relation("CoachBookings")
+  ownedProjects              Project[]              @relation("ProjectOwner")
+  assignedProjects           Project[]              @relation("ProjectCoach")
+  projectCollaborations      ProjectCollaborator[]  @relation("ProjectCollaboratorUser")
+  sentProjectCollaborations  ProjectCollaborator[]  @relation("ProjectCollaboratorInviter")
+  sentProjectInvitations     ProjectInvitation[]    @relation("ProjectInvitationInviter")
+  acceptedProjectInvitations ProjectInvitation[]    @relation("ProjectInvitationAcceptedBy")
+  securityAuditLogs          SecurityAuditLog[]     @relation("SecurityAuditActor")
+  comments                   ProjectComment[]
+  managedAcceleratorPrograms AcceleratorProgram[]   @relation("ProgramManager")
+  programMemberships         ProgramMember[]
+  narratometerAnalyses       NarratometerAnalysis[]
+  createdAt                  DateTime               @default(now())
+  updatedAt                  DateTime               @updatedAt
 }
 
 model Account {
-  id                 String  @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?
-  access_token       String?
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?
-  session_state      String?
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -115,18 +124,19 @@ enum LessonType {
 }
 
 model Course {
-  id          String       @id @default(cuid())
-  title       String
-  slug        String       @unique
-  description String?
-  thumbnail   String?
-  status      CourseStatus  @default(DRAFT)
-  price       Int          @default(0) // Price in cents (0 = free)
-  currency    String       @default("GHS")
-  modules     Module[]
-  enrollments Enrollment[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  id                  String               @id @default(cuid())
+  title               String
+  slug                String               @unique
+  description         String?
+  thumbnail           String?
+  status              CourseStatus         @default(DRAFT)
+  price               Int                  @default(0) // Price in cents (0 = free)
+  currency            String               @default("GHS")
+  modules             Module[]
+  enrollments         Enrollment[]
+  acceleratorPrograms AcceleratorProgram[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@index([status])
   @@index([slug])
@@ -147,37 +157,38 @@ model Module {
 }
 
 model Lesson {
-  id          String     @id @default(cuid())
-  moduleId    String
-  module      Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-  title       String
-  type        LessonType @default(TEXT)
-  content     String?    // Rich text / markdown for TEXT type
-  videoUrl    String?    // External video URL for VIDEO type
-  videoDuration Int?     // Duration in seconds
-  quizData    Json?      // Quiz questions/answers for QUIZ type
-  order       Int        @default(0)
-  isFree      Boolean    @default(false) // Free preview lessons
-  progress    LessonProgress[]
-  quizAttempts QuizAttempt[]
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id            String           @id @default(cuid())
+  moduleId      String
+  module        Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title         String
+  type          LessonType       @default(TEXT)
+  content       String? // Rich text / markdown for TEXT type
+  videoUrl      String? // External video URL for VIDEO type
+  videoDuration Int? // Duration in seconds
+  quizData      Json? // Quiz questions/answers for QUIZ type
+  order         Int              @default(0)
+  isFree        Boolean          @default(false) // Free preview lessons
+  progress      LessonProgress[]
+  quizAttempts  QuizAttempt[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   @@index([moduleId, order])
 }
 
 model Enrollment {
-  id         String   @id @default(cuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  courseId   String
-  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  paymentId  String?  // Null if free course
-  payment    Payment? @relation(fields: [paymentId], references: [id])
-  progress   LessonProgress[]
-  completedAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String           @id @default(cuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  courseId       String
+  course         Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  paymentId      String? // Null if free course
+  payment        Payment?         @relation(fields: [paymentId], references: [id])
+  progress       LessonProgress[]
+  programMembers ProgramMember[]
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@unique([userId, courseId])
   @@index([userId])
@@ -200,15 +211,15 @@ model LessonProgress {
 }
 
 model QuizAttempt {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessonId    String
-  lesson      Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  answers     Json     // User's submitted answers
-  score       Float    // Percentage score (0-100)
-  passed      Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessonId  String
+  lesson    Lesson   @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  answers   Json // User's submitted answers
+  score     Float // Percentage score (0-100)
+  passed    Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   @@index([userId, lessonId])
 }
@@ -222,19 +233,20 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id              String        @id @default(cuid())
-  userId          String
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  amount          Int           // Amount in cents
-  currency        String        @default("GHS")
-  status          PaymentStatus @default(PENDING)
-  provider        String        @default("paystack")
-  providerRef     String?       // PayStack reference
-  providerData    Json?         // Full provider response
-  enrollments     Enrollment[]
-  bookings        Booking[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                  String               @id @default(cuid())
+  userId              String
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount              Int // Amount in cents
+  currency            String               @default("GHS")
+  status              PaymentStatus        @default(PENDING)
+  provider            String               @default("paystack")
+  providerRef         String? // PayStack reference
+  providerData        Json? // Full provider response
+  enrollments         Enrollment[]
+  bookings            Booking[]
+  acceleratorPrograms AcceleratorProgram[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@index([userId])
   @@index([providerRef])
@@ -251,17 +263,17 @@ enum BookingStatus {
 }
 
 model ServiceOffering {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   title       String
-  slug        String   @unique
+  slug        String    @unique
   description String?
-  duration    Int      // Duration in minutes
-  price       Int      @default(0) // Price in cents (0 = free)
-  currency    String   @default("ZAR")
-  isActive    Boolean  @default(true)
+  duration    Int // Duration in minutes
+  price       Int       @default(0) // Price in cents (0 = free)
+  currency    String    @default("ZAR")
+  isActive    Boolean   @default(true)
   bookings    Booking[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([isActive])
 }
@@ -270,9 +282,9 @@ model Availability {
   id        String   @id @default(cuid())
   coachId   String
   coach     User     @relation("CoachAvailability", fields: [coachId], references: [id], onDelete: Cascade)
-  dayOfWeek Int      // 0 = Sunday, 6 = Saturday
-  startTime String   // "09:00" (HH:mm format)
-  endTime   String   // "17:00"
+  dayOfWeek Int // 0 = Sunday, 6 = Saturday
+  startTime String // "09:00" (HH:mm format)
+  endTime   String // "17:00"
   timezone  String   @default("Africa/Johannesburg")
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -282,26 +294,26 @@ model Availability {
 }
 
 model Booking {
-  id          String        @id @default(cuid())
-  clientId    String
-  client      User          @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
-  coachId     String
-  coach       User          @relation("CoachBookings", fields: [coachId], references: [id], onDelete: Cascade)
-  serviceId   String
-  service     ServiceOffering @relation(fields: [serviceId], references: [id])
-  paymentId   String?
-  payment     Payment?      @relation(fields: [paymentId], references: [id])
-  status      BookingStatus @default(PENDING)
-  startTime   DateTime
-  endTime     DateTime
-  timezone    String        @default("Africa/Johannesburg")
-  notes       String?       // Client notes when booking
-  coachNotes  String?       // Coach-only notes
-  meetingUrl  String?       // Video call link
-  cancelledAt DateTime?
+  id           String          @id @default(cuid())
+  clientId     String
+  client       User            @relation("ClientBookings", fields: [clientId], references: [id], onDelete: Cascade)
+  coachId      String
+  coach        User            @relation("CoachBookings", fields: [coachId], references: [id], onDelete: Cascade)
+  serviceId    String
+  service      ServiceOffering @relation(fields: [serviceId], references: [id])
+  paymentId    String?
+  payment      Payment?        @relation(fields: [paymentId], references: [id])
+  status       BookingStatus   @default(PENDING)
+  startTime    DateTime
+  endTime      DateTime
+  timezone     String          @default("Africa/Johannesburg")
+  notes        String? // Client notes when booking
+  coachNotes   String? // Coach-only notes
+  meetingUrl   String? // Video call link
+  cancelledAt  DateTime?
   cancelReason String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   @@index([clientId, status])
   @@index([coachId, status])
@@ -319,43 +331,162 @@ enum ProjectStatus {
   ARCHIVED
 }
 
+enum ProjectCollaboratorRole {
+  VIEWER
+  COMMENTER
+  EDITOR
+}
+
+enum ProjectInvitationScope {
+  ANYONE
+  COMPANY
+}
+
+enum ProjectInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
 model Project {
-  id          String        @id @default(cuid())
-  title       String
-  description String?
-  status      ProjectStatus @default(BRIEF)
-  clientId    String
-  client      User          @relation("ProjectOwner", fields: [clientId], references: [id], onDelete: Cascade)
-  coachId     String?
-  coach       User?         @relation("ProjectCoach", fields: [coachId], references: [id])
-  brief       String?       // Client's pitch brief / context
-  feedback    String?       // Coach's latest feedback
-  dueDate     DateTime?
-  deliverables Deliverable[]
-  comments    ProjectComment[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id                   String                 @id @default(cuid())
+  title                String
+  description          String?
+  status               ProjectStatus          @default(BRIEF)
+  clientId             String
+  client               User                   @relation("ProjectOwner", fields: [clientId], references: [id], onDelete: Cascade)
+  coachId              String?
+  coach                User?                  @relation("ProjectCoach", fields: [coachId], references: [id])
+  brief                String? // Client's pitch brief / context
+  feedback             String? // Coach's latest feedback
+  dueDate              DateTime?
+  deliverables         Deliverable[]
+  comments             ProjectComment[]
+  collaborators        ProjectCollaborator[]
+  invitations          ProjectInvitation[]
+  narratometerAnalyses NarratometerAnalysis[]
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
 
   @@index([clientId])
   @@index([coachId])
   @@index([status])
 }
 
-model Deliverable {
-  id          String   @id @default(cuid())
+model ProjectCollaborator {
+  id          String                  @id @default(cuid())
   projectId   String
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  title       String
-  fileUrl     String?  // Supabase Storage URL
-  fileType    String?  // MIME type
-  fileSize    Int?     // bytes
-  version     Int      @default(1)
-  approved    Boolean  @default(false)
-  approvedAt  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  project     Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User                    @relation("ProjectCollaboratorUser", fields: [userId], references: [id], onDelete: Cascade)
+  invitedById String
+  invitedBy   User                    @relation("ProjectCollaboratorInviter", fields: [invitedById], references: [id], onDelete: Cascade)
+  role        ProjectCollaboratorRole @default(EDITOR)
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+
+  @@unique([projectId, userId])
+  @@index([projectId])
+  @@index([userId])
+}
+
+model ProjectInvitation {
+  id           String                  @id @default(cuid())
+  projectId    String
+  project      Project                 @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  invitedById  String
+  invitedBy    User                    @relation("ProjectInvitationInviter", fields: [invitedById], references: [id], onDelete: Cascade)
+  acceptedById String?
+  acceptedBy   User?                   @relation("ProjectInvitationAcceptedBy", fields: [acceptedById], references: [id], onDelete: SetNull)
+  email        String?
+  tokenHash    String                  @unique
+  role         ProjectCollaboratorRole @default(VIEWER)
+  scope        ProjectInvitationScope  @default(ANYONE)
+  status       ProjectInvitationStatus @default(PENDING)
+  expiresAt    DateTime
+  acceptedAt   DateTime?
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@index([projectId, status])
+  @@index([email])
+  @@index([expiresAt])
+}
+
+model Deliverable {
+  id         String    @id @default(cuid())
+  projectId  String
+  project    Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title      String
+  fileUrl    String? // Supabase Storage URL
+  fileType   String? // MIME type
+  fileSize   Int? // bytes
+  version    Int       @default(1)
+  approved   Boolean   @default(false)
+  approvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   @@index([projectId])
+}
+
+// ── Accelerator Programs ───────────────────────────────────────────────
+
+enum AcceleratorProgramStatus {
+  PENDING_PAYMENT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum ProgramMemberStatus {
+  INVITED
+  ACTIVE
+  REMOVED
+}
+
+model AcceleratorProgram {
+  id             String                   @id @default(cuid())
+  name           String
+  company        String
+  managerId      String
+  manager        User                     @relation("ProgramManager", fields: [managerId], references: [id], onDelete: Cascade)
+  courseId       String
+  course         Course                   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  paymentId      String?
+  payment        Payment?                 @relation(fields: [paymentId], references: [id])
+  seatsPurchased Int
+  packagePrice   Int                      @default(0)
+  currency       String                   @default("GHS")
+  status         AcceleratorProgramStatus @default(PENDING_PAYMENT)
+  notes          String?
+  members        ProgramMember[]
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  @@index([managerId])
+  @@index([courseId])
+  @@index([status])
+}
+
+model ProgramMember {
+  id           String              @id @default(cuid())
+  programId    String
+  program      AcceleratorProgram  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  userId       String?
+  user         User?               @relation(fields: [userId], references: [id], onDelete: SetNull)
+  enrollmentId String?
+  enrollment   Enrollment?         @relation(fields: [enrollmentId], references: [id], onDelete: SetNull)
+  name         String?
+  email        String
+  status       ProgramMemberStatus @default(INVITED)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([programId, email])
+  @@index([userId])
+  @@index([programId, status])
 }
 
 model ProjectComment {
@@ -368,4 +499,109 @@ model ProjectComment {
   createdAt DateTime @default(now())
 
   @@index([projectId, createdAt])
+}
+
+// ── Narratometer Pitch Diagnosis ───────────────────────────────────────
+
+enum NarratometerStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum NarratometerAgentKind {
+  EXTRACTOR
+  NARRATIVE
+  INVESTOR_READINESS
+  DESIGN_SYSTEM
+  GUARDRAIL
+  ORCHESTRATOR
+}
+
+enum NarratometerProvider {
+  GROQ
+  OPENROUTER
+}
+
+model NarratometerAnalysis {
+  id              String                 @id @default(cuid())
+  userId          String
+  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId       String?
+  project         Project?               @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  title           String
+  founderContext  String?
+  fileName        String
+  fileMimeType    String
+  fileSize        Int
+  fileFingerprint String
+  provider        NarratometerProvider?
+  model           String?
+  status          NarratometerStatus     @default(PENDING)
+  score           Int?
+  riskLevel       String?
+  summary         String?
+  report          Json?
+  error           String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  expiresAt       DateTime?
+  agentRuns       NarratometerAgentRun[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([userId, createdAt])
+  @@index([projectId])
+  @@index([status])
+  @@index([fileFingerprint])
+}
+
+model NarratometerAgentRun {
+  id          String                @id @default(cuid())
+  analysisId  String
+  analysis    NarratometerAnalysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  kind        NarratometerAgentKind
+  provider    NarratometerProvider?
+  model       String?
+  status      NarratometerStatus    @default(PENDING)
+  summary     String?
+  findings    Json?
+  error       String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+
+  @@index([analysisId, kind])
+  @@index([status])
+}
+
+model RateLimitEvent {
+  id        String   @id @default(cuid())
+  scope     String
+  keyHash   String
+  createdAt DateTime @default(now())
+
+  @@index([scope, keyHash, createdAt])
+  @@index([createdAt])
+}
+
+model SecurityAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation("SecurityAuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  targetType String?
+  targetId   String?
+  outcome    String   @default("SUCCESS")
+  ipHash     String?
+  userAgent  String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([targetType, targetId])
+  @@index([createdAt])
 }

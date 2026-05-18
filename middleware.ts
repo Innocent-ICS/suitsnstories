@@ -44,6 +44,7 @@ export default auth((req) => {
         pathname.startsWith("/clients") ||
         pathname.startsWith("/engineers") ||
         pathname.startsWith("/analytics") ||
+        pathname.startsWith("/narratometer-security") ||
         pathname.startsWith("/inquiries");
 
     if (isAdminRoute && !isLoggedIn) {

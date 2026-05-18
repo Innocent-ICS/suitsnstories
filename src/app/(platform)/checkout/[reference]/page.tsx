@@ -7,6 +7,7 @@ import {
   CheckCircleIcon,
   CreditCardIcon,
   ShieldCheckIcon,
+  UserGroupIcon,
 } from "@heroicons/react/24/outline";
 
 interface CheckoutPageProps {
@@ -16,6 +17,9 @@ interface CheckoutPageProps {
 type PaymentMeta = {
   type?: string;
   courseTitle?: string;
+  courseId?: string;
+  programName?: string;
+  seatCount?: number;
   serviceTitle?: string;
   coachId?: string;
   startTime?: string;
@@ -45,6 +49,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   if (!meta?.authorizationUrl) notFound();
 
   const isBooking = meta.type === "booking";
+  const isProgram = meta.type === "accelerator_program";
   const coach = isBooking && meta.coachId
     ? await db.user.findUnique({
         where: { id: meta.coachId },
@@ -52,11 +57,13 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
       })
     : null;
 
-  const title = isBooking
+  const title = isProgram
+    ? meta.programName || "Accelerator program"
+    : isBooking
     ? meta.serviceTitle || "Coaching session"
     : meta.courseTitle || "Course enrollment";
-  const eyebrow = isBooking ? "Session Checkout" : "Course Checkout";
-  const summaryHref = isBooking ? "/bookings" : "/learn";
+  const eyebrow = isProgram ? "Program Checkout" : isBooking ? "Session Checkout" : "Course Checkout";
+  const summaryHref = isProgram ? "/programs" : isBooking ? "/bookings" : "/learn";
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -72,11 +79,14 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="rounded-xl border border-primary/20 bg-primary/10 p-3 text-primary">
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-primary/10 via-emerald-500/5 to-transparent" />
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-start">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-background text-primary shadow-sm">
               {isBooking ? (
                 <CalendarIcon className="h-6 w-6" />
+              ) : isProgram ? (
+                <UserGroupIcon className="h-6 w-6" />
               ) : (
                 <CheckCircleIcon className="h-6 w-6" />
               )}
@@ -84,14 +94,24 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-medium text-foreground">{title}</h2>
               <p className="mt-1 text-sm text-muted-foreground">
-                {isBooking ? "Your selected coaching session" : "Lifetime access for this account"}
+                {isProgram
+                  ? `${meta.seatCount || 0} course seats for ${meta.courseTitle || "the selected course"}`
+                  : isBooking
+                    ? "Your selected coaching session"
+                    : "Lifetime access for this account"}
               </p>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <div className="relative mt-6 grid gap-3 sm:grid-cols-2">
             <Detail label="Account" value={payment.user.email || payment.user.name || "Signed-in user"} />
             <Detail label="Reference" value={reference} />
+            {isProgram && (
+              <>
+                <Detail label="Course" value={meta.courseTitle || "Pitch course"} />
+                <Detail label="Seats" value={`${meta.seatCount || 0} entrepreneurs`} />
+              </>
+            )}
             {isBooking && meta.startTime && meta.endTime && (
               <>
                 <Detail

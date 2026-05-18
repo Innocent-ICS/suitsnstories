@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { uploadFile } from "@/lib/supabase";
+import { uploadPublicFile } from "@/lib/supabase";
+import {
+  assertSameOriginRequest,
+  getRequestSecurityContext,
+} from "@/lib/security/request";
+
+const PUBLIC_UPLOAD_BUCKETS = new Set(["course-thumbnails"]);
 
 export async function POST(req: NextRequest) {
   try {
+    const requestContext = getRequestSecurityContext(req);
+    try {
+      assertSameOriginRequest(requestContext);
+    } catch {
+      return NextResponse.json({ error: "Request origin is not allowed." }, { status: 403 });
+    }
+
     // Auth check
     const session = await auth();
     if (!session?.user?.id) {
@@ -29,6 +42,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "File and path are required" }, { status: 400 });
     }
 
+    if (!PUBLIC_UPLOAD_BUCKETS.has(bucket)) {
+      return NextResponse.json({ error: "Uploads to this bucket must use private storage flows" }, { status: 400 });
+    }
+
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
@@ -43,7 +60,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const url = await uploadFile(bucket, path, file);
+    const url = await uploadPublicFile(bucket, path, file);
 
     if (!url) {
       return NextResponse.json({ error: "Upload failed" }, { status: 500 });

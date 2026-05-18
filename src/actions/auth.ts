@@ -5,6 +5,11 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email/resend";
 import { welcomeEmail } from "@/lib/email/templates";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import {
+    assertSameOriginRequest,
+    getServerActionSecurityContext,
+} from "@/lib/security/request";
 
 const RegisterSchema = z.object({
     name: z.string().min(1, { message: "Name is required" }),
@@ -13,6 +18,9 @@ const RegisterSchema = z.object({
 });
 
 export const register = async (values: z.infer<typeof RegisterSchema>) => {
+    const requestContext = await getServerActionSecurityContext();
+    assertSameOriginRequest(requestContext);
+
     const validatedFields = RegisterSchema.safeParse(values);
 
     if (!validatedFields.success) {
@@ -20,6 +28,16 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
     }
 
     const { email, password, name } = validatedFields.data;
+    const rateLimit = await checkRateLimit({
+        scope: "auth-register",
+        identifier: `${requestContext.ip}:${email.toLowerCase()}`,
+        limit: 5,
+        windowMs: 60 * 60 * 1000,
+    });
+
+    if (!rateLimit.allowed) {
+        return { error: "Too many signup attempts. Please try again shortly." };
+    }
 
     const existingUser = await db.user.findUnique({
         where: {

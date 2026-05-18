@@ -15,6 +15,8 @@ interface ConfirmationPageProps {
 type PaymentMeta = {
   type?: string;
   courseTitle?: string;
+  programName?: string;
+  seatCount?: number;
   serviceTitle?: string;
   coachId?: string;
   startTime?: string;
@@ -39,6 +41,7 @@ export default async function CheckoutConfirmationPage({
   const meta = payment?.providerData as PaymentMeta | null;
   const success = status === "success" && payment?.status === "SUCCESS";
   const isBooking = meta?.type === "booking";
+  const isProgram = meta?.type === "accelerator_program";
   const coach = isBooking && meta?.coachId
     ? await db.user.findUnique({
         where: { id: meta.coachId },
@@ -47,24 +50,32 @@ export default async function CheckoutConfirmationPage({
     : null;
 
   const title = success
-    ? isBooking
+    ? isProgram
+      ? "Program package active"
+      : isBooking
       ? "Session confirmed"
       : "Enrollment confirmed"
     : "Payment needs attention";
   const description = success
-    ? isBooking
+    ? isProgram
+      ? "Your accelerator cohort can now access the course."
+      : isBooking
       ? "Your coaching session is booked and ready."
       : "Your course access is ready."
     : reason || "We could not complete this payment.";
   const primaryHref = success
-    ? isBooking
+    ? isProgram
+      ? "/programs"
+      : isBooking
       ? "/bookings"
       : "/learn"
     : ref
       ? `/checkout/${encodeURIComponent(ref)}`
       : "/dashboard";
   const primaryLabel = success
-    ? isBooking
+    ? isProgram
+      ? "View programs"
+      : isBooking
       ? "View bookings"
       : "Start learning"
     : "Return to checkout";
@@ -88,14 +99,15 @@ export default async function CheckoutConfirmationPage({
       </section>
 
       {payment && meta && (
-        <section className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <section className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-primary/10 via-emerald-500/5 to-transparent" />
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
+            <div className="relative">
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Summary
               </p>
               <h2 className="mt-1 text-xl font-medium text-foreground">
-                {isBooking ? meta.serviceTitle : meta.courseTitle}
+                {isProgram ? meta.programName : isBooking ? meta.serviceTitle : meta.courseTitle}
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 {formatMoney(payment.amount, payment.currency)} · {ref}
@@ -103,6 +115,13 @@ export default async function CheckoutConfirmationPage({
             </div>
             <StatusBadge success={success} />
           </div>
+
+          {success && isProgram && (
+            <div className="relative mt-5 grid gap-3 border-t border-border pt-5 sm:grid-cols-2">
+              <Detail label="Course" value={meta.courseTitle || "Pitch course"} />
+              <Detail label="Seats" value={`${meta.seatCount || 0} entrepreneurs`} />
+            </div>
+          )}
 
           {success && isBooking && meta.startTime && meta.endTime && (
             <div className="mt-5 border-t border-border pt-5">

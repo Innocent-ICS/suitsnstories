@@ -45,6 +45,15 @@ function wrap(content: string): string {
   `;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function welcomeEmail(name: string): { subject: string; html: string; text: string } {
   const firstName = name.split(" ")[0];
   return {
@@ -93,5 +102,40 @@ export function inquiryReceivedEmail(name: string): { subject: string; html: str
       </div>
     `),
     text: `Thank you, ${firstName}.\n\nWe've received your inquiry and will respond within 24-48 hours.\n\nLearn more: ${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/methodology`,
+  };
+}
+
+export function projectInvitationEmail({
+  inviterName,
+  projectTitle,
+  inviteUrl,
+  role,
+}: {
+  inviterName: string;
+  projectTitle: string;
+  inviteUrl: string;
+  role: string;
+}): { subject: string; html: string; text: string } {
+  const safeInviterName = escapeHtml(inviterName);
+  const safeProjectTitle = escapeHtml(projectTitle);
+  const safeRole = escapeHtml(role);
+  const safeInviteUrl = escapeHtml(inviteUrl);
+  return {
+    subject: `You're invited to ${projectTitle}`,
+    html: wrap(`
+      <h2 style="font-size: 24px; margin: 0 0 16px;">Project invitation</h2>
+      <p style="font-size: 15px; line-height: 1.6; color: #475569;">
+        ${safeInviterName} invited you to ${safeRole.toLowerCase()} on <strong>${safeProjectTitle}</strong>.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${safeInviteUrl}" style="${buttonStyle}">
+          Open project invitation
+        </a>
+      </div>
+      <p style="font-size: 13px; line-height: 1.6; color: #64748b;">
+        If you were not expecting this invitation, you can ignore this email.
+      </p>
+    `),
+    text: `${inviterName} invited you to ${role.toLowerCase()} on ${projectTitle}.\n\nOpen the invitation: ${inviteUrl}`,
   };
 }

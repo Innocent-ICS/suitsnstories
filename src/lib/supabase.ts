@@ -20,10 +20,10 @@ if (!supabaseAdmin) {
 }
 
 /**
- * Upload a file to Supabase Storage.
- * Returns the public URL of the uploaded file.
+ * Upload a public file to an explicitly public Supabase Storage bucket.
+ * Do not use for confidential decks or deliverables.
  */
-export async function uploadFile(
+export async function uploadPublicFile(
   bucket: string,
   path: string,
   file: File | Blob
@@ -48,6 +48,55 @@ export async function uploadFile(
   const { data } = supabaseAdmin.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }
+
+/**
+ * Upload a private file and return its storage path.
+ * Call createSignedFileUrl when a short-lived read URL is needed.
+ */
+export async function uploadPrivateFile(
+  bucket: string,
+  path: string,
+  file: File | Blob
+): Promise<string | null> {
+  if (!supabaseAdmin) {
+    console.error("[STORAGE] Supabase not configured — cannot upload");
+    return null;
+  }
+
+  const { error } = await supabaseAdmin.storage
+    .from(bucket)
+    .upload(path, file, {
+      cacheControl: "private, max-age=0",
+      upsert: true,
+    });
+
+  if (error) {
+    console.error("[STORAGE] Private upload failed:", error);
+    return null;
+  }
+
+  return path;
+}
+
+export async function createSignedFileUrl(bucket: string, path: string, expiresInSeconds = 60 * 10) {
+  if (!supabaseAdmin) {
+    console.error("[STORAGE] Supabase not configured — cannot sign URL");
+    return null;
+  }
+
+  const { data, error } = await supabaseAdmin.storage
+    .from(bucket)
+    .createSignedUrl(path, expiresInSeconds);
+
+  if (error) {
+    console.error("[STORAGE] Signed URL failed:", error);
+    return null;
+  }
+
+  return data.signedUrl;
+}
+
+export const uploadFile = uploadPublicFile;
 
 /**
  * Delete a file from Supabase Storage.

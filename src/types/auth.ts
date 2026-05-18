@@ -4,7 +4,7 @@
  */
 
 /** Mirrors the Prisma UserRole enum */
-export type UserRole = "CLIENT" | "COACH" | "PERCEPTION_ENGINEER" | "ADMIN";
+export type UserRole = "CLIENT" | "COACH" | "PERCEPTION_ENGINEER" | "PROGRAM_MANAGER" | "ADMIN";
 
 /** User profile data (mirrors Prisma Profile model) */
 export interface UserProfile {
@@ -30,10 +30,11 @@ export interface PlatformUser {
 
 /** Route access configuration */
 export const ROLE_ACCESS = {
-  platform: ["CLIENT", "COACH", "PERCEPTION_ENGINEER", "ADMIN"] as UserRole[],
+  platform: ["CLIENT", "COACH", "PERCEPTION_ENGINEER", "PROGRAM_MANAGER", "ADMIN"] as UserRole[],
   admin: ["ADMIN"] as UserRole[],
   coaching: ["COACH", "ADMIN"] as UserRole[],
   engineering: ["PERCEPTION_ENGINEER", "ADMIN"] as UserRole[],
+  programs: ["PROGRAM_MANAGER", "ADMIN"] as UserRole[],
 } as const;
 
 /** Check if a user has access to a specific area */

@@ -4,6 +4,11 @@ import * as z from "zod";
 import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email/resend";
 import { inquiryReceivedEmail } from "@/lib/email/templates";
+import { checkRateLimit } from "@/lib/security/rate-limit";
+import {
+  assertSameOriginRequest,
+  getServerActionSecurityContext,
+} from "@/lib/security/request";
 
 // Validation schema for contact form
 const ContactFormSchema = z.object({
@@ -51,6 +56,19 @@ export async function submitContactInquiry(
   data: ContactFormData
 ): Promise<SubmissionResult> {
   try {
+    const requestContext = await getServerActionSecurityContext();
+    assertSameOriginRequest(requestContext);
+
+    const rateLimit = await checkRateLimit({
+      scope: "contact-form",
+      identifier: requestContext.ip,
+      limit: 5,
+      windowMs: 60 * 60 * 1000,
+    });
+    if (!rateLimit.allowed) {
+      return { success: false, error: "Too many inquiries. Please try again shortly." };
+    }
+
     // Validate input fields
     const validatedFields = ContactFormSchema.safeParse(data);
 

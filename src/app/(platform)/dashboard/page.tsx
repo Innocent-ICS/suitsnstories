@@ -33,6 +33,19 @@ export default async function DashboardPage() {
     });
   }
 
+  let programStats = { programs: 0, seats: 0, pending: 0 };
+  if (role === "PROGRAM_MANAGER" && session?.user?.id) {
+    const programs = await db.acceleratorProgram.findMany({
+      where: { managerId: session.user.id },
+      select: { seatsPurchased: true, status: true },
+    });
+    programStats = {
+      programs: programs.length,
+      seats: programs.reduce((sum, program) => sum + program.seatsPurchased, 0),
+      pending: programs.filter((program) => program.status === "PENDING_PAYMENT").length,
+    };
+  }
+
   // Fetch project count for clients
   let projectCount = 0;
   let enrollmentCount = 0;
@@ -152,8 +165,10 @@ export default async function DashboardPage() {
             ? "Here's an overview of your platform."
             : role === "COACH"
               ? "Here are your upcoming coaching sessions."
-              : role === "PERCEPTION_ENGINEER"
+            : role === "PERCEPTION_ENGINEER"
                 ? "Here are your assigned projects."
+                : role === "PROGRAM_MANAGER"
+                  ? "Here are your accelerator programs and cohorts."
                 : "Here's your pitch optimization journey."}
         </p>
       </div>
@@ -181,8 +196,8 @@ export default async function DashboardPage() {
               accent="amber"
             />
             <QuickAction
-              title="Pitch Diagnosis"
-              description="Get your pitch analyzed by AI"
+              title="Narratometer"
+              description="Diagnose story, design, and investor readiness"
               href="/diagnostic"
               accent="purple"
             />
@@ -220,6 +235,34 @@ export default async function DashboardPage() {
             />
           </>
         )}
+        {role === "PROGRAM_MANAGER" && (
+          <>
+            <QuickAction
+              title="Programs"
+              description={`${programStats.programs} cohorts · ${programStats.seats} seats`}
+              href="/programs"
+              accent="blue"
+            />
+            <QuickAction
+              title="Pending Packages"
+              description={`${programStats.pending} awaiting payment`}
+              href="/programs"
+              accent="amber"
+            />
+            <QuickAction
+              title="Projects"
+              description="Track founder pitch projects"
+              href="/projects"
+              accent="green"
+            />
+            <QuickAction
+              title="Courses"
+              description="Review available pitch curriculum"
+              href="/learn"
+              accent="purple"
+            />
+          </>
+        )}
         {role === "ADMIN" && (
           <>
             <StatCard title="Total Users" value={adminStats.users} subtitle="Platform users" />
@@ -234,8 +277,9 @@ export default async function DashboardPage() {
 
       {/* Admin quick links */}
       {role === "ADMIN" && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           <QuickAction title="Manage Content" description="Courses & lessons" href="/content" accent="blue" />
+          <QuickAction title="Programs" description="Cohorts & bulk seats" href="/programs" accent="green" />
           <QuickAction title="Manage Services" description="Bookable offerings" href="/services-admin" accent="green" />
           <QuickAction title="Manage Users" description="Roles & profiles" href="/clients" accent="purple" />
           <QuickAction title="View Inquiries" description="Contact form submissions" href="/inquiries" accent="amber" />

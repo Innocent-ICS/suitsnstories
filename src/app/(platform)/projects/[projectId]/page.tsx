@@ -22,6 +22,32 @@ export default async function ProjectPage({ params }: Props) {
     include: {
       client: { select: { id: true, name: true, image: true, email: true } },
       coach: { select: { id: true, name: true, image: true } },
+      collaborators: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              profile: { select: { company: true } },
+            },
+          },
+        },
+      },
+      invitations: {
+        where: { status: "PENDING" },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          scope: true,
+          expiresAt: true,
+          createdAt: true,
+        },
+      },
       deliverables: { orderBy: { createdAt: "desc" } },
       comments: {
         orderBy: { createdAt: "asc" },
@@ -36,7 +62,8 @@ export default async function ProjectPage({ params }: Props) {
   const isOwner = project.clientId === session.user.id;
   const isCoach = project.coachId === session.user.id;
   const isAdmin = user?.role === "ADMIN";
-  if (!isOwner && !isCoach && !isAdmin) notFound();
+  const isCollaborator = project.collaborators.some((c) => c.userId === session.user.id);
+  if (!isOwner && !isCoach && !isAdmin && !isCollaborator) notFound();
 
   // Get coaches for admin assignment
   const coaches = isAdmin
@@ -58,6 +85,19 @@ export default async function ProjectPage({ params }: Props) {
         dueDate: project.dueDate?.toISOString() || null,
         client: project.client,
         coach: project.coach,
+        collaborators: project.collaborators.map((c) => ({
+          id: c.id,
+          role: c.role,
+          user: c.user,
+        })),
+        invitations: project.invitations.map((invite) => ({
+          id: invite.id,
+          email: invite.email,
+          role: invite.role,
+          scope: invite.scope,
+          expiresAt: invite.expiresAt.toISOString(),
+          createdAt: invite.createdAt.toISOString(),
+        })),
         deliverables: project.deliverables.map((d) => ({
           id: d.id,
           title: d.title,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
@@ -16,6 +16,7 @@ import {
 import { useTheme } from "next-themes";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { UserRole } from "@/types/auth";
+import { getNavForRole } from "@/components/platform/sidebar";
 
 interface TopbarProps {
   userName?: string | null;
@@ -27,11 +28,10 @@ interface TopbarProps {
 export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
   const pathname = usePathname();
-
-  useEffect(() => setMounted(true), []);
+  const navItems = getNavForRole(userRole);
+  const isDark = resolvedTheme === "dark";
 
   // Get page title from pathname
   const pageTitle = pathname
@@ -44,15 +44,18 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
     CLIENT: "Client",
     COACH: "Coach",
     PERCEPTION_ENGINEER: "Engineer",
+    PROGRAM_MANAGER: "Program Manager",
     ADMIN: "Admin",
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm px-3 sm:px-4 md:px-6">
       {/* Mobile menu button */}
       <button
         className="md:hidden p-2 rounded-lg hover:bg-muted"
         onClick={() => setMobileNavOpen(!mobileNavOpen)}
+        aria-label="Open navigation"
+        aria-expanded={mobileNavOpen}
       >
         {mobileNavOpen ? (
           <XMarkIcon className="h-5 w-5" />
@@ -62,26 +65,20 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
       </button>
 
       {/* Page title */}
-      <h1 className="text-lg font-medium text-foreground">{pageTitle}</h1>
+      <h1 className="min-w-0 flex-1 truncate px-3 text-base font-medium text-foreground sm:text-lg md:px-0">
+        {pageTitle}
+      </h1>
 
       {/* Right side actions */}
       <div className="flex items-center gap-3">
         {/* Theme toggle */}
         <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+          onClick={() => setTheme(isDark ? "light" : "dark")}
           className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Toggle theme"
-          suppressHydrationWarning
         >
-          {mounted ? (
-            theme === "dark" ? (
-              <SunIcon className="h-5 w-5" />
-            ) : (
-              <MoonIcon className="h-5 w-5" />
-            )
-          ) : (
-            <div className="h-5 w-5" />
-          )}
+          <SunIcon className="hidden h-5 w-5 dark:block" />
+          <MoonIcon className="h-5 w-5 dark:hidden" />
         </button>
 
         {/* User menu */}
@@ -145,6 +142,50 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
           )}
         </div>
       </div>
+
+      {mobileNavOpen && (
+        <div className="fixed inset-x-0 top-16 z-40 border-b border-border bg-card shadow-lg md:hidden">
+          <nav className="max-h-[calc(100vh-4rem)] overflow-y-auto px-3 py-3">
+            <ul className="grid gap-1">
+              {navItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/dashboard" && pathname.startsWith(item.href));
+                return (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      onClick={() => setMobileNavOpen(false)}
+                      className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      {item.label}
+                    </Link>
+                  </li>
+                );
+              })}
+              <li>
+                <Link
+                  href="/settings"
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                    pathname === "/settings"
+                      ? "bg-primary/10 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <Cog6ToothIcon className="h-5 w-5 shrink-0" />
+                  Settings
+                </Link>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

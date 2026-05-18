@@ -96,7 +96,12 @@ export function About() {
 
                 {/* Social Proof / Honors */}
                 <FadeIn className="space-y-8 border-y border-border/40 py-16">
-                    <p className="text-center text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Recognized by</p>
+                    <div className="mx-auto max-w-2xl space-y-3 text-center">
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Founder experience includes</p>
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                            Programs, competitions, scholarships, and communities where Innocent has participated, advanced, won, or been selected.
+                        </p>
+                    </div>
                     <LogoTicker items={HONORS_ITEMS} speed="slow" />
                 </FadeIn>
 
@@ -104,7 +109,7 @@ export function About() {
                 <FadeIn className="max-w-3xl mx-auto text-center space-y-6">
                     <h2 className="text-3xl md:text-4xl font-serif text-foreground">Our Goal</h2>
                     <p className="text-muted-foreground text-lg font-light leading-relaxed">
-                        "To be the default partner for those who take narrative seriously—because the cost of getting it wrong is too high."
+                        &ldquo;To be the default partner for those who take narrative seriously—because the cost of getting it wrong is too high.&rdquo;
                     </p>
                 </FadeIn>
 

@@ -28,7 +28,8 @@ export default async function ProjectsPage() {
       include: {
         client: { select: { id: true, name: true, image: true } },
         coach: { select: { id: true, name: true, image: true } },
-        _count: { select: { deliverables: true, comments: true } },
+        collaborators: { where: { userId: session.user.id }, select: { role: true } },
+        _count: { select: { deliverables: true, comments: true, collaborators: true } },
       },
     });
   } else if (role === "COACH") {
@@ -38,17 +39,24 @@ export default async function ProjectsPage() {
       include: {
         client: { select: { id: true, name: true, image: true } },
         coach: { select: { id: true, name: true, image: true } },
-        _count: { select: { deliverables: true, comments: true } },
+        collaborators: { where: { userId: session.user.id }, select: { role: true } },
+        _count: { select: { deliverables: true, comments: true, collaborators: true } },
       },
     });
   } else {
     projects = await db.project.findMany({
-      where: { clientId: session.user.id },
+      where: {
+        OR: [
+          { clientId: session.user.id },
+          { collaborators: { some: { userId: session.user.id } } },
+        ],
+      },
       orderBy: { updatedAt: "desc" },
       include: {
         client: { select: { id: true, name: true, image: true } },
         coach: { select: { id: true, name: true, image: true } },
-        _count: { select: { deliverables: true, comments: true } },
+        collaborators: { where: { userId: session.user.id }, select: { role: true } },
+        _count: { select: { deliverables: true, comments: true, collaborators: true } },
       },
     });
   }
@@ -73,7 +81,7 @@ export default async function ProjectsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-serif text-foreground">Projects</h1>
           <p className="text-muted-foreground mt-1">
@@ -81,21 +89,23 @@ export default async function ProjectsPage() {
               ? "Pitch projects assigned to you."
               : role === "ADMIN"
               ? "All platform projects."
+              : role === "PROGRAM_MANAGER"
+              ? "Your program and company pitch projects."
               : "Your pitch projects and deliverables."}
           </p>
         </div>
-        {role === "CLIENT" && <NewProjectButton />}
+        {(role === "CLIENT" || role === "PROGRAM_MANAGER") && <NewProjectButton />}
       </div>
 
       {projects.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
           <FolderIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <p className="text-muted-foreground">
-            {role === "CLIENT"
+            {role === "CLIENT" || role === "PROGRAM_MANAGER"
               ? "No projects yet. Create one to start your pitch journey."
               : "No projects assigned to you yet."}
           </p>
-          {role === "CLIENT" && (
+          {(role === "CLIENT" || role === "PROGRAM_MANAGER") && (
             <div className="mt-4">
               <NewProjectButton />
             </div>
@@ -109,9 +119,9 @@ export default async function ProjectsPage() {
               href={`/projects/${project.id}`}
               className="block rounded-xl border border-border bg-card p-5 hover:shadow-md transition-all"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1.5 min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h3 className="font-medium text-foreground">{project.title}</h3>
                     <span
                       className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -120,13 +130,18 @@ export default async function ProjectsPage() {
                     >
                       {statusLabels[project.status] || project.status}
                     </span>
+                    {project.collaborators.length > 0 && (
+                      <span className="rounded-full bg-cyan-500/10 px-2 py-0.5 text-xs font-medium text-cyan-600">
+                        Shared
+                      </span>
+                    )}
                   </div>
                   {project.description && (
                     <p className="text-sm text-muted-foreground line-clamp-1">
                       {project.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground pt-1">
                     {/* Show client name for coaches/admins */}
                     {role !== "CLIENT" && (
                       <span className="flex items-center gap-1">
@@ -143,6 +158,9 @@ export default async function ProjectsPage() {
                     )}
                     <span>{project._count.deliverables} deliverables</span>
                     <span>{project._count.comments} comments</span>
+                    {project._count.collaborators > 0 && (
+                      <span>{project._count.collaborators} collaborators</span>
+                    )}
                     {project.dueDate && (
                       <span className="flex items-center gap-1">
                         <ClockIcon className="h-3.5 w-3.5" />

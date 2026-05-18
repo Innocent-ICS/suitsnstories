@@ -48,6 +48,7 @@ export default async function AdminClientsPage() {
     clients: users.filter((u) => u.role === "CLIENT").length,
     coaches: users.filter((u) => u.role === "COACH").length,
     engineers: users.filter((u) => u.role === "PERCEPTION_ENGINEER").length,
+    programManagers: users.filter((u) => u.role === "PROGRAM_MANAGER").length,
     admins: users.filter((u) => u.role === "ADMIN").length,
   };
   const clientUsers = users.filter((u) => u.role === "CLIENT");
@@ -71,11 +72,12 @@ export default async function AdminClientsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <StatCard label="Total" value={roleCounts.total} />
         <StatCard label="Clients" value={roleCounts.clients} />
         <StatCard label="Coaches" value={roleCounts.coaches} />
         <StatCard label="Engineers" value={roleCounts.engineers} />
+        <StatCard label="Program Managers" value={roleCounts.programManagers} />
         <StatCard label="Admins" value={roleCounts.admins} />
       </div>
 

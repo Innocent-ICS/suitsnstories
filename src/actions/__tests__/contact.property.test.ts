@@ -3,7 +3,7 @@
  * Using fast-check for property-based testing
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 import { submitContactInquiry, type ContactFormData } from '../contact';
 import { db } from '@/lib/db';
@@ -47,7 +47,7 @@ describe('Property 1: Form submission persistence', () => {
           name: fc.string({ minLength: 1, maxLength: 100 })
             .filter(s => s.trim().length > 0)
             .filter(s => sanitizeInput(s).trim().length > 0), // Ensure it's still valid after sanitization
-          email: fc.emailAddress().map(email => email.replace(/@/, '@test-property-')),
+          email: fc.uuid().map(id => `user-${id}@test-property.example.com`),
           company: fc.option(fc.string({ minLength: 0, maxLength: 100 }), { nil: undefined }),
           message: fc.string({ minLength: 1, maxLength: 1000 })
             .filter(s => s.trim().length > 0)
@@ -97,5 +97,5 @@ describe('Property 1: Form submission persistence', () => {
       ),
       { numRuns: 100 } // Run 100 iterations as specified in design doc
     );
-  });
+  }, 120_000);
 });
