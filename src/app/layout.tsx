@@ -21,6 +21,15 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Suits & Stories | Narrative clarity for high-stakes professional rooms",
   description: "Suits & Stories helps founders, professionals, and executives communicate with precision, authority, and strategic narrative control in high-stakes professional settings.",
+  icons: {
+    icon: [
+      { url: '/icon.png', sizes: '500x500', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-icon.png', sizes: '500x500', type: 'image/png' },
+    ],
+  },
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
