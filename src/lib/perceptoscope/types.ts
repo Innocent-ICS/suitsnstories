@@ -1,6 +1,6 @@
-export type NarratometerProviderName = "GROQ" | "OPENROUTER";
+export type PerceptoscopeProviderName = "GROQ" | "OPENROUTER";
 
-export type NarratometerAgentKind =
+export type PerceptoscopeAgentKind =
   | "EXTRACTOR"
   | "NARRATIVE"
   | "INVESTOR_READINESS"
@@ -8,7 +8,7 @@ export type NarratometerAgentKind =
   | "GUARDRAIL"
   | "ORCHESTRATOR";
 
-export type NarratometerStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
+export type PerceptoscopeStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 
 export type DeckFileKind = "pdf" | "pptx" | "docx" | "image" | "text";
 
@@ -71,7 +71,7 @@ export interface AgentResult {
   risks?: string[];
 }
 
-export interface NarratometerReport {
+export interface PerceptoscopeReport {
   score: number;
   riskLevel: "low" | "medium" | "high";
   summary: string;

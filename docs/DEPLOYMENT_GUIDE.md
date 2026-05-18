@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-05-18
 
-This guide assumes a Vercel deployment, Supabase Postgres, Paystack payments, Resend email, Google OAuth, and Groq/OpenRouter for Narratometer. The same sequence can be adapted to another Node-compatible host, but Vercel is the shortest path for this Next.js app.
+This guide assumes a Vercel deployment, Supabase Postgres, Paystack payments, Resend email, Google OAuth, and Groq/OpenRouter for Perceptoscope. The same sequence can be adapted to another Node-compatible host, but Vercel is the shortest path for this Next.js app.
 
 ## 1. Production Accounts
 
@@ -59,8 +59,8 @@ RESEND_API_KEY=
 EMAIL_FROM=Suits & Stories <hello@yourdomain.com>
 GROQ_KEY=
 OPEN_ROUTER_KEY=
-NARRATOMETER_GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-NARRATOMETER_OPENROUTER_MODEL=nvidia/nemotron-nano-12b-v2-vl:free
+PERCEPTOSCOPE_GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+PERCEPTOSCOPE_OPENROUTER_MODEL=nvidia/nemotron-nano-12b-v2-vl:free
 ```
 
 Notes:
@@ -202,7 +202,7 @@ Before storing confidential decks or deliverables:
 4. Add malware scanning if files are persisted.
 5. Never expose service-role keys to the browser.
 
-## 10. Narratometer Runtime
+## 10. Perceptoscope Runtime
 
 Requirements:
 
@@ -210,7 +210,7 @@ Requirements:
 - A runtime that can execute Node.js route handlers.
 - For best PDF compression: Ghostscript available in the runtime.
 
-If deploying to Vercel serverless, verify whether Ghostscript is available. If not, the app still falls back to local JS extraction and image sampling, but PDF compression quality will be lower. For high-volume production use, move Narratometer jobs to a worker environment where Ghostscript and any OCR helpers are explicitly installed.
+If deploying to Vercel serverless, verify whether Ghostscript is available. If not, the app still falls back to local JS extraction and image sampling, but PDF compression quality will be lower. For high-volume production use, move Perceptoscope jobs to a worker environment where Ghostscript and any OCR helpers are explicitly installed.
 
 Recommended next production architecture:
 
@@ -233,7 +233,7 @@ After deployment:
 8. Confirm viewer cannot comment/edit.
 9. Confirm commenter can comment but cannot edit/upload deliverables.
 10. Confirm editor can comment/edit/upload deliverables.
-11. Run Narratometer on:
+11. Run Perceptoscope on:
     - text-light PDF
     - image-heavy PDF
     - PPTX

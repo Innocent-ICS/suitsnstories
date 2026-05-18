@@ -111,7 +111,7 @@ export function validateDeckFile(file: UploadedDeckFile) {
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return { ok: false as const, error: "File too large. The Narratometer accepts files up to 60MB." };
+    return { ok: false as const, error: "File too large. The Perceptoscope accepts files up to 60MB." };
   }
 
   return { ok: true as const, kind, safeName };

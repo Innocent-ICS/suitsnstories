@@ -13,7 +13,7 @@ Suits & Stories is a Next.js 16 application with:
 - Paystack checkout and webhook fulfillment.
 - Resend transactional email.
 - Supabase service-role storage helper for server-side uploads.
-- Narratometer AI analysis using Groq and/or OpenRouter.
+- Perceptoscope AI analysis using Groq and/or OpenRouter.
 - Project collaboration, comments, deliverables, and invitation links.
 
 Primary sensitive assets:
@@ -23,7 +23,7 @@ Primary sensitive assets:
 - Payment records and Paystack references.
 - AI provider keys, Supabase service-role key, auth secret, OAuth secrets.
 - Invitation tokens and collaborator permissions.
-- Course content used as Narratometer knowledge context.
+- Course content used as Perceptoscope knowledge context.
 
 ## Threat Model
 
@@ -75,14 +75,14 @@ Payments:
 Files and AI:
 
 - Uploads are validated by MIME/extension and magic header.
-- Raw Narratometer files are processed in memory/temp storage and not persisted as deck blobs.
+- Raw Perceptoscope files are processed in memory/temp storage and not persisted as deck blobs.
 - PDF preprocessing uses Ghostscript where available to create a compressed analysis artifact and low-resolution page images.
 - PPTX/DOCX extraction reads OpenXML text and selectively compresses image samples.
 - The AI prompt treats deck contents as untrusted evidence and blocks deck-provided instructions.
 - Internal checks cover prompt injection, jailbreak language, data exfiltration requests, likely secrets, payment-card-like data, active PDF markers, Office macro/ActiveX/OLE/external-link indicators, external URLs, and large-file processing paths.
 - Guardrail/security internals are stored for operator review but are not returned through public diagnosis payloads.
-- Narratometer uploads are rate limited, scheduled with Next `after()`, and degrade to a structured fallback report when a specialist or orchestrator model pass fails.
-- Admins have an internal Narratometer security view for guardrail findings and failed agent runs.
+- Perceptoscope uploads are rate limited, scheduled with Next `after()`, and degrade to a structured fallback report when a specialist or orchestrator model pass fails.
+- Admins have an internal Perceptoscope security view for guardrail findings and failed agent runs.
 
 Browser and transport:
 
@@ -115,7 +115,7 @@ Recommended soon:
 - Add backup/restore drills for Supabase Postgres.
 - Add tests for horizontal access control: owner, viewer, commenter, editor, coach, admin, and non-member.
 
-## Narratometer Privacy Notes
+## Perceptoscope Privacy Notes
 
 Design intent:
 

@@ -198,7 +198,7 @@ async function extractZipImages(entries: JSZip.JSZipObject[], prefix: string) {
 async function preprocessPdf(buffer: Buffer, fileName: string) {
   const preprocessingNotes: string[] = [];
   const structuralNotes: string[] = [
-    "PDF uploaded. The Narratometer creates a compressed analysis artifact before any model/OCR request.",
+    "PDF uploaded. The Perceptoscope creates a compressed analysis artifact before any model/OCR request.",
     `Local PDF page estimate: ${estimatePdfPages(buffer)} pages.`,
   ];
   let pdfBuffer: Buffer | undefined;
@@ -240,7 +240,7 @@ async function preprocessPdf(buffer: Buffer, fileName: string) {
 }
 
 async function compressPdfWithGhostscript(buffer: Buffer, fileName: string) {
-  const tempDir = await mkdtemp(path.join(tmpdir(), "narratometer-pdf-"));
+  const tempDir = await mkdtemp(path.join(tmpdir(), "perceptoscope-pdf-"));
   const inputPath = path.join(tempDir, fileName.endsWith(".pdf") ? fileName : "input.pdf");
   const outputPath = path.join(tempDir, "analysis.pdf");
   const thumbnailPattern = path.join(tempDir, "page-%03d.jpg");
@@ -362,7 +362,7 @@ async function buildVisionImage(
 }
 
 async function compressImageWithSips(buffer: Buffer, fileName: string) {
-  const tempDir = await mkdtemp(path.join(tmpdir(), "narratometer-image-"));
+  const tempDir = await mkdtemp(path.join(tmpdir(), "perceptoscope-image-"));
   const extension = fileName.split(".").pop()?.replace(/[^\w]/g, "") || "img";
   const inputPath = path.join(tempDir, `input.${extension}`);
   const outputPath = path.join(tempDir, "analysis.jpg");

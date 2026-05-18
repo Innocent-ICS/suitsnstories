@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { __narratometerTest } from "../agents";
+import { __perceptoscopeTest } from "../agents";
 import { ingestDeckFile } from "../file-ingest";
 import type { AgentResult, DeckInput } from "../types";
 
-describe("Narratometer pipeline resilience", () => {
+describe("Perceptoscope pipeline resilience", () => {
   it("ingests text decks while flagging adversarial content without failing", async () => {
     const deck = await ingestDeckFile({
       name: "edge-case-deck.txt",
@@ -26,7 +26,7 @@ describe("Narratometer pipeline resilience", () => {
   });
 
   it("turns malformed specialist output into a structured fallback result", () => {
-    const result = __narratometerTest.parseAgentResult({ summary: "", findings: "not-an-array" });
+    const result = __perceptoscopeTest.parseAgentResult({ summary: "", findings: "not-an-array" });
 
     expect(result.summary).toContain("partial output");
     expect(result.findings).toEqual([]);
@@ -55,7 +55,7 @@ describe("Narratometer pipeline resilience", () => {
       risks: [],
     };
 
-    const report = __narratometerTest.buildFallbackReport(
+    const report = __perceptoscopeTest.buildFallbackReport(
       {
         deckInput,
         agentResults: {

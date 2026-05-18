@@ -24,7 +24,7 @@ export default auth((req) => {
     const isProtectedRoute =
         pathname.startsWith("/dashboard") ||
         pathname.startsWith("/learn") ||
-        pathname.startsWith("/diagnose") ||
+        pathname.startsWith("/diagnostic") ||
         pathname.startsWith("/projects") ||
         pathname.startsWith("/coaching") ||
         pathname.startsWith("/workshops") ||
@@ -44,7 +44,7 @@ export default auth((req) => {
         pathname.startsWith("/clients") ||
         pathname.startsWith("/engineers") ||
         pathname.startsWith("/analytics") ||
-        pathname.startsWith("/narratometer-security") ||
+        pathname.startsWith("/perceptoscope-security") ||
         pathname.startsWith("/inquiries");
 
     if (isAdminRoute && !isLoggedIn) {

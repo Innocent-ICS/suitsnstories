@@ -1,4 +1,4 @@
-import type { ImageObservationInput, NarratometerProviderName } from "./types";
+import type { ImageObservationInput, PerceptoscopeProviderName } from "./types";
 
 export interface ProviderMessagePayload {
   system: string;
@@ -14,7 +14,7 @@ export interface ProviderMessagePayload {
 }
 
 export interface ProviderResponse<T> {
-  provider: NarratometerProviderName;
+  provider: PerceptoscopeProviderName;
   model: string;
   data: T;
 }
@@ -46,7 +46,7 @@ export function chooseProvider(options: {
   needsPdfOcr?: boolean;
   hasImages?: boolean;
   preferred?: string | null;
-}): NarratometerProviderName {
+}): PerceptoscopeProviderName {
   const preferred = options.preferred?.toUpperCase();
   if (preferred === "OPENROUTER" && hasOpenRouterKey()) return "OPENROUTER";
   if (preferred === "GROQ" && hasGroqKey()) return "GROQ";
@@ -54,11 +54,11 @@ export function chooseProvider(options: {
   if (options.hasImages && hasGroqKey()) return "GROQ";
   if (hasOpenRouterKey()) return "OPENROUTER";
   if (hasGroqKey()) return "GROQ";
-  throw new Error("Narratometer requires GROQ_KEY or OPEN_ROUTER_KEY in .env.local.");
+  throw new Error("Perceptoscope requires GROQ_KEY or OPEN_ROUTER_KEY in .env.local.");
 }
 
-export async function callNarratometerModel<T>(
-  provider: NarratometerProviderName,
+export async function callPerceptoscopeModel<T>(
+  provider: PerceptoscopeProviderName,
   payload: ProviderMessagePayload
 ): Promise<ProviderResponse<T>> {
   if (provider === "OPENROUTER") return callOpenRouter<T>(payload);
@@ -69,7 +69,7 @@ async function callGroq<T>(payload: ProviderMessagePayload): Promise<ProviderRes
   const key = process.env.GROQ_KEY || process.env.GROQ_API_KEY;
   if (!key) throw new Error("GROQ_KEY is not configured.");
 
-  const model = process.env.NARRATOMETER_GROQ_MODEL || DEFAULT_GROQ_MODEL;
+  const model = process.env.PERCEPTOSCOPE_GROQ_MODEL || DEFAULT_GROQ_MODEL;
   const content = buildMultimodalContent(payload.prompt, payload.images);
 
   const response = await fetchWithTimeout("https://api.groq.com/openai/v1/chat/completions", {
@@ -106,7 +106,7 @@ async function callOpenRouter<T>(payload: ProviderMessagePayload): Promise<Provi
   const key = process.env.OPEN_ROUTER_KEY || process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPEN_ROUTER_KEY is not configured.");
 
-  const model = process.env.NARRATOMETER_OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL;
+  const model = process.env.PERCEPTOSCOPE_OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL;
   const content = buildMultimodalContent(payload.prompt, payload.images, payload.pdf);
   const plugins = payload.pdf
     ? [{ id: "file-parser", pdf: { engine: payload.pdf.useOcr ? "mistral-ocr" : "cloudflare-ai" } }]
@@ -118,7 +118,7 @@ async function callOpenRouter<T>(payload: ProviderMessagePayload): Promise<Provi
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
       "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
-      "X-Title": "Suits & Stories Narratometer",
+      "X-Title": "Suits & Stories Perceptoscope",
     },
     body: JSON.stringify({
       model,
@@ -191,7 +191,7 @@ function parseCompletionJson<T>(json: ChatCompletionResponse): T {
 
 async function fetchWithTimeout(url: string, init: RequestInit) {
   const controller = new AbortController();
-  const timeoutMs = Number(process.env.NARRATOMETER_PROVIDER_TIMEOUT_MS || DEFAULT_PROVIDER_TIMEOUT_MS);
+  const timeoutMs = Number(process.env.PERCEPTOSCOPE_PROVIDER_TIMEOUT_MS || DEFAULT_PROVIDER_TIMEOUT_MS);
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
   try {

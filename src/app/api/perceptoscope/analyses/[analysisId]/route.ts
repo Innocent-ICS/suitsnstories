@@ -2,10 +2,10 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import {
-  publicNarratometerError,
+  publicPerceptoscopeError,
   sanitizeAgentRuns,
-  sanitizeNarratometerReport,
-} from "@/lib/narratometer/public-report";
+  sanitizePerceptoscopeReport,
+} from "@/lib/perceptoscope/public-report";
 
 export const runtime = "nodejs";
 
@@ -22,7 +22,7 @@ export async function GET(_req: Request, { params }: Props) {
   const { analysisId } = await params;
   const [user, analysis] = await Promise.all([
     db.user.findUnique({ where: { id: session.user.id }, select: { role: true } }),
-    db.narratometerAnalysis.findUnique({
+    db.perceptoscopeAnalysis.findUnique({
       where: { id: analysisId },
       include: {
         agentRuns: { orderBy: { createdAt: "asc" } },
@@ -41,8 +41,8 @@ export async function GET(_req: Request, { params }: Props) {
     score: analysis.score,
     riskLevel: analysis.riskLevel,
     summary: analysis.summary,
-    report: sanitizeNarratometerReport(analysis.report),
-    error: publicNarratometerError(analysis.status, analysis.error),
+    report: sanitizePerceptoscopeReport(analysis.report),
+    error: publicPerceptoscopeError(analysis.status, analysis.error),
     fileName: analysis.fileName,
     provider: analysis.provider,
     model: analysis.model,

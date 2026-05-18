@@ -46,7 +46,7 @@ model User {
   comments                   ProjectComment[]
   managedAcceleratorPrograms AcceleratorProgram[]   @relation("ProgramManager")
   programMemberships         ProgramMember[]
-  narratometerAnalyses       NarratometerAnalysis[]
+  perceptoscopeAnalyses      PerceptoscopeAnalysis[]
   createdAt                  DateTime               @default(now())
   updatedAt                  DateTime               @updatedAt
 }
@@ -365,7 +365,7 @@ model Project {
   comments             ProjectComment[]
   collaborators        ProjectCollaborator[]
   invitations          ProjectInvitation[]
-  narratometerAnalyses NarratometerAnalysis[]
+  perceptoscopeAnalyses PerceptoscopeAnalysis[]
   createdAt            DateTime               @default(now())
   updatedAt            DateTime               @updatedAt
 
@@ -501,30 +501,36 @@ model ProjectComment {
   @@index([projectId, createdAt])
 }
 
-// ── Narratometer Pitch Diagnosis ───────────────────────────────────────
+// ── Perceptoscope Pitch Diagnosis ───────────────────────────────────────
 
-enum NarratometerStatus {
+enum PerceptoscopeStatus {
   PENDING
   PROCESSING
   COMPLETED
   FAILED
+
+  @@map("NarratometerStatus")
 }
 
-enum NarratometerAgentKind {
+enum PerceptoscopeAgentKind {
   EXTRACTOR
   NARRATIVE
   INVESTOR_READINESS
   DESIGN_SYSTEM
   GUARDRAIL
   ORCHESTRATOR
+
+  @@map("NarratometerAgentKind")
 }
 
-enum NarratometerProvider {
+enum PerceptoscopeProvider {
   GROQ
   OPENROUTER
+
+  @@map("NarratometerProvider")
 }
 
-model NarratometerAnalysis {
+model PerceptoscopeAnalysis {
   id              String                 @id @default(cuid())
   userId          String
   user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -536,9 +542,9 @@ model NarratometerAnalysis {
   fileMimeType    String
   fileSize        Int
   fileFingerprint String
-  provider        NarratometerProvider?
+  provider        PerceptoscopeProvider?
   model           String?
-  status          NarratometerStatus     @default(PENDING)
+  status          PerceptoscopeStatus     @default(PENDING)
   score           Int?
   riskLevel       String?
   summary         String?
@@ -547,7 +553,7 @@ model NarratometerAnalysis {
   startedAt       DateTime?
   completedAt     DateTime?
   expiresAt       DateTime?
-  agentRuns       NarratometerAgentRun[]
+  agentRuns       PerceptoscopeAgentRun[]
   createdAt       DateTime               @default(now())
   updatedAt       DateTime               @updatedAt
 
@@ -555,16 +561,17 @@ model NarratometerAnalysis {
   @@index([projectId])
   @@index([status])
   @@index([fileFingerprint])
+  @@map("NarratometerAnalysis")
 }
 
-model NarratometerAgentRun {
+model PerceptoscopeAgentRun {
   id          String                @id @default(cuid())
   analysisId  String
-  analysis    NarratometerAnalysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
-  kind        NarratometerAgentKind
-  provider    NarratometerProvider?
+  analysis    PerceptoscopeAnalysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  kind        PerceptoscopeAgentKind
+  provider    PerceptoscopeProvider?
   model       String?
-  status      NarratometerStatus    @default(PENDING)
+  status      PerceptoscopeStatus    @default(PENDING)
   summary     String?
   findings    Json?
   error       String?
@@ -575,6 +582,7 @@ model NarratometerAgentRun {
 
   @@index([analysisId, kind])
   @@index([status])
+  @@map("NarratometerAgentRun")
 }
 
 model RateLimitEvent {

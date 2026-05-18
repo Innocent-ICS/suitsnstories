@@ -1,19 +1,19 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { NarratometerConsole } from "./narratometer-console";
+import { PerceptoscopeConsole } from "./perceptoscope-console";
 import {
-  publicNarratometerError,
+  publicPerceptoscopeError,
   sanitizeAgentRuns,
-  sanitizeNarratometerReport,
-} from "@/lib/narratometer/public-report";
+  sanitizePerceptoscopeReport,
+} from "@/lib/perceptoscope/public-report";
 
 export default async function PlatformDiagnosticPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
 
   const [analyses, projects] = await Promise.all([
-    db.narratometerAnalysis.findMany({
+    db.perceptoscopeAnalysis.findMany({
       where: { userId: session.user.id },
       orderBy: { createdAt: "desc" },
       take: 12,
@@ -59,13 +59,13 @@ export default async function PlatformDiagnosticPage() {
   ]);
 
   return (
-    <NarratometerConsole
+    <PerceptoscopeConsole
       initialAnalyses={analyses.map((analysis) => ({
         ...analysis,
         createdAt: analysis.createdAt.toISOString(),
         completedAt: analysis.completedAt?.toISOString() || null,
-        report: sanitizeNarratometerReport(analysis.report),
-        error: publicNarratometerError(analysis.status, analysis.error),
+        report: sanitizePerceptoscopeReport(analysis.report),
+        error: publicPerceptoscopeError(analysis.status, analysis.error),
         agentRuns: sanitizeAgentRuns(analysis.agentRuns),
       }))}
       projects={projects}

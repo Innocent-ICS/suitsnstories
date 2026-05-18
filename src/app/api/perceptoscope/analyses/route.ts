@@ -1,8 +1,8 @@
 import { after, NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { processNarratometerAnalysis } from "@/lib/narratometer/agents";
-import { fingerprintBuffer, safeJsonText, validateDeckFile } from "@/lib/narratometer/security";
+import { processPerceptoscopeAnalysis } from "@/lib/perceptoscope/agents";
+import { fingerprintBuffer, safeJsonText, validateDeckFile } from "@/lib/perceptoscope/security";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import {
   assertSameOriginRequest,
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const rateLimit = await checkRateLimit({
-      scope: "narratometer-upload",
+      scope: "perceptoscope-upload",
       identifier: userId,
       limit: 8,
       windowMs: 60 * 60 * 1000,
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const analysis = await db.narratometerAnalysis.create({
+    const analysis = await db.perceptoscopeAnalysis.create({
       data: {
         userId,
         projectId,
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     });
 
     after(() => {
-      void processNarratometerAnalysis({
+      void processPerceptoscopeAnalysis({
         analysisId: analysis.id,
         userId,
         file: uploadedFile,
@@ -102,8 +102,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ analysisId: analysis.id, status: "PENDING" }, { status: 202 });
   } catch (error) {
-    console.error("[NARRATOMETER_POST]", error);
-    return NextResponse.json({ error: "Could not start the Narratometer analysis." }, { status: 500 });
+    console.error("[PERCEPTOSCOPE_POST]", error);
+    return NextResponse.json({ error: "Could not start the Perceptoscope analysis." }, { status: 500 });
   }
 }
 

@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  BeakerIcon,
   CheckCircleIcon,
   ClockIcon,
   DocumentArrowUpIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
+import { StethoscopeIcon } from "@/components/icons/stethoscope-icon";
 
 type AnalysisStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 
@@ -52,7 +52,7 @@ interface ReportFinding {
   nextStep: string;
 }
 
-interface NarratometerReport {
+interface PerceptoscopeReport {
   score: number;
   riskLevel: "low" | "medium" | "high";
   summary: string;
@@ -62,7 +62,7 @@ interface NarratometerReport {
   agentSummaries: Record<string, string>;
 }
 
-export function NarratometerConsole({
+export function PerceptoscopeConsole({
   initialAnalyses,
   projects,
 }: {
@@ -84,7 +84,7 @@ export function NarratometerConsole({
     if (!activeAnalysis || !["PENDING", "PROCESSING"].includes(activeAnalysis.status)) return;
 
     const interval = window.setInterval(async () => {
-      const response = await fetch(`/api/narratometer/analyses/${activeAnalysis.id}`, { cache: "no-store" });
+      const response = await fetch(`/api/perceptoscope/analyses/${activeAnalysis.id}`, { cache: "no-store" });
       if (!response.ok) return;
       const updated = (await response.json()) as AnalysisListItem;
       setAnalyses((current) => upsertAnalysis(current, updated));
@@ -100,14 +100,14 @@ export function NarratometerConsole({
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const response = await fetch("/api/narratometer/analyses", {
+    const response = await fetch("/api/perceptoscope/analyses", {
       method: "POST",
       body: formData,
     });
 
     if (!response.ok) {
       const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-      setError(payload?.error || "Could not start the Narratometer.");
+      setError(payload?.error || "Could not start the Perceptoscope.");
       setSubmitting(false);
       return;
     }
@@ -143,8 +143,8 @@ export function NarratometerConsole({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2 text-sm font-medium text-primary">
-            <BeakerIcon className="h-4 w-4" />
-            Narratometer
+            <StethoscopeIcon className="h-4 w-4" />
+            Perceptoscope
           </div>
           <h1 className="text-3xl font-serif text-foreground">Pitch Diagnosis</h1>
           <p className="mt-1 max-w-2xl text-muted-foreground">
@@ -236,7 +236,7 @@ export function NarratometerConsole({
 
               <Button type="submit" disabled={submitting} className="w-full gap-2">
                 <DocumentArrowUpIcon className="h-4 w-4" />
-                {submitting ? "Starting..." : "Run Narratometer"}
+                {submitting ? "Starting..." : "Run Perceptoscope"}
               </Button>
             </form>
           </section>
@@ -292,7 +292,7 @@ export function NarratometerConsole({
   );
 }
 
-function ReportView({ analysis, report }: { analysis: AnalysisListItem; report: NarratometerReport }) {
+function ReportView({ analysis, report }: { analysis: AnalysisListItem; report: PerceptoscopeReport }) {
   return (
     <div className="space-y-4">
       <section className="rounded-xl border border-border bg-card p-5">
@@ -311,7 +311,7 @@ function ReportView({ analysis, report }: { analysis: AnalysisListItem; report: 
             <p className="mt-2 text-sm text-muted-foreground">{report.summary}</p>
           </div>
           <div className="rounded-lg border border-border bg-background px-4 py-3 text-center">
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Narratometer</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">Perceptoscope</p>
             <p className="text-3xl font-semibold text-foreground">{report.score}</p>
           </div>
         </div>
@@ -421,7 +421,7 @@ function FailureState({ analysis }: { analysis: AnalysisListItem }) {
 function EmptyState() {
   return (
     <section className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-      <BeakerIcon className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+      <StethoscopeIcon className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
       <p className="text-muted-foreground">Run a pitch diagnosis to see the report here.</p>
     </section>
   );
@@ -457,7 +457,7 @@ function SeverityBadge({ severity }: { severity: ReportFinding["severity"] }) {
   );
 }
 
-function RiskBadge({ risk }: { risk: NarratometerReport["riskLevel"] }) {
+function RiskBadge({ risk }: { risk: PerceptoscopeReport["riskLevel"] }) {
   return <SeverityBadge severity={risk} />;
 }
 
@@ -469,9 +469,9 @@ function upsertAnalysis(current: AnalysisListItem[], next: AnalysisListItem) {
   return [next, ...current];
 }
 
-function parseReport(value: unknown): NarratometerReport | null {
+function parseReport(value: unknown): PerceptoscopeReport | null {
   if (!value || typeof value !== "object") return null;
-  const candidate = value as Partial<NarratometerReport>;
+  const candidate = value as Partial<PerceptoscopeReport>;
   if (
     typeof candidate.score !== "number" ||
     typeof candidate.summary !== "string" ||
@@ -480,7 +480,7 @@ function parseReport(value: unknown): NarratometerReport | null {
   ) {
     return null;
   }
-  return candidate as NarratometerReport;
+  return candidate as PerceptoscopeReport;
 }
 
 function formatAgentKind(kind: string) {

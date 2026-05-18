@@ -1,6 +1,6 @@
 const HIDDEN_AGENT_KINDS = new Set(["GUARDRAIL"]);
 
-export function sanitizeNarratometerReport(value: unknown) {
+export function sanitizePerceptoscopeReport(value: unknown) {
   if (!value || typeof value !== "object") return value;
   const report = { ...(value as Record<string, unknown>) };
 
@@ -18,7 +18,7 @@ export function sanitizeNarratometerReport(value: unknown) {
   return report;
 }
 
-export function publicNarratometerError(status: string, error?: string | null) {
+export function publicPerceptoscopeError(status: string, error?: string | null) {
   if (status !== "FAILED") return null;
   if (error && /engine is not configured|File too large|Unsupported file|empty/i.test(error)) return error;
   return "The diagnosis could not be completed. Please try again with the alternate model route or a lighter deck export.";

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   HomeIcon,
   AcademicCapIcon,
-  BeakerIcon,
   FolderIcon,
   CalendarIcon,
   Cog6ToothIcon,
@@ -15,6 +14,7 @@ import {
   RocketLaunchIcon,
   ShieldCheckIcon,
 } from "@heroicons/react/24/outline";
+import { StethoscopeIcon } from "@/components/icons/stethoscope-icon";
 import type { UserRole } from "@/types/auth";
 
 interface NavItem {
@@ -28,7 +28,7 @@ const clientNav: NavItem[] = [
   { label: "Learn", href: "/learn", icon: AcademicCapIcon },
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
-  { label: "Narratometer", href: "/diagnostic", icon: BeakerIcon },
+  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon },
 ];
 
 const programManagerNav: NavItem[] = [
@@ -58,8 +58,8 @@ const adminNav: NavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Programs", href: "/programs", icon: RocketLaunchIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
-  { label: "Narratometer", href: "/diagnostic", icon: BeakerIcon },
-  { label: "AI Security", href: "/narratometer-security", icon: ShieldCheckIcon },
+  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon },
+  { label: "AI Security", href: "/perceptoscope-security", icon: ShieldCheckIcon },
   { label: "Content", href: "/content", icon: DocumentTextIcon },
   { label: "Services", href: "/services-admin", icon: CalendarIcon },
   { label: "Users", href: "/clients", icon: UsersIcon },

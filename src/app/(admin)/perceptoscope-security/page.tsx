@@ -5,8 +5,8 @@ type InternalGuardrails = {
   privacyNotes?: string[];
 };
 
-export default async function NarratometerSecurityPage() {
-  const analyses = await db.narratometerAnalysis.findMany({
+export default async function PerceptoscopeSecurityPage() {
+  const analyses = await db.perceptoscopeAnalysis.findMany({
     orderBy: { createdAt: "desc" },
     take: 50,
     include: {
@@ -29,7 +29,7 @@ export default async function NarratometerSecurityPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-serif text-foreground">Narratometer Security</h1>
+        <h1 className="text-3xl font-serif text-foreground">Perceptoscope Security</h1>
         <p className="mt-1 text-muted-foreground">
           Internal guardrail findings, failed specialist passes, and upload-processing notes.
         </p>
@@ -44,7 +44,7 @@ export default async function NarratometerSecurityPage() {
       <div className="space-y-3">
         {analyses.length === 0 ? (
           <div className="rounded-xl border border-border bg-card p-12 text-center">
-            <p className="text-muted-foreground">No Narratometer analyses yet.</p>
+            <p className="text-muted-foreground">No Perceptoscope analyses yet.</p>
           </div>
         ) : (
           analyses.map((analysis) => {

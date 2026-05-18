@@ -196,7 +196,7 @@ export default async function DashboardPage() {
               accent="amber"
             />
             <QuickAction
-              title="Narratometer"
+              title="Perceptoscope"
               description="Diagnose story, design, and investor readiness"
               href="/diagnostic"
               accent="purple"
