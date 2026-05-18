@@ -12,6 +12,16 @@ interface LessonPageProps {
   params: Promise<{ slug: string; lessonId: string }>;
 }
 
+type QuizData = {
+  questions: {
+    id: string;
+    question: string;
+    options: string[];
+    correctAnswer: string;
+  }[];
+  passingScore: number;
+} | null;
+
 export default async function LessonPage({ params }: LessonPageProps) {
   const { slug, lessonId } = await params;
   const session = await auth();
@@ -92,10 +102,11 @@ export default async function LessonPage({ params }: LessonPageProps) {
           type: lesson.type,
           content: lesson.content,
           videoUrl: lesson.videoUrl,
-          quizData: lesson.quizData as any,
+          quizData: lesson.quizData as QuizData,
         }}
         isCompleted={isCompleted}
         isEnrolled={!!enrollment}
+        nextLessonHref={nextLesson ? `/learn/${slug}/${nextLesson.id}` : `/learn/${slug}`}
       />
 
       {/* Navigation */}

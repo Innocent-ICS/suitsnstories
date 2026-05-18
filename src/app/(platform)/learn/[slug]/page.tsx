@@ -59,6 +59,12 @@ export default async function CoursePage({ params }: CoursePageProps) {
     0
   );
   const completedCount = completedLessonIds.size;
+  const allLessons = course.modules.flatMap((m) => m.lessons);
+  const nextLesson = enrollment
+    ? allLessons.find((lesson) => !completedLessonIds.has(lesson.id))
+    : allLessons.find((lesson) => lesson.isFree);
+  const progressPct =
+    totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0;
 
   const lessonIcons = {
     TEXT: DocumentTextIcon,
@@ -105,14 +111,35 @@ export default async function CoursePage({ params }: CoursePageProps) {
         {/* Progress bar */}
         {enrollment && totalLessons > 0 && (
           <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{completedCount}/{totalLessons} lessons complete</span>
+              <span>{progressPct}%</span>
+            </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
                 className="h-full bg-primary rounded-full transition-all duration-700"
                 style={{
-                  width: `${Math.round((completedCount / totalLessons) * 100)}%`,
+                  width: `${progressPct}%`,
                 }}
               />
             </div>
+          </div>
+        )}
+
+        {nextLesson && (
+          <div className="rounded-xl border border-border bg-card p-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {enrollment ? "Next up" : "Free preview"}
+              </p>
+              <p className="mt-1 font-medium text-foreground">{nextLesson.title}</p>
+            </div>
+            <Link
+              href={`/learn/${slug}/${nextLesson.id}`}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              {enrollment ? "Continue learning" : "Preview lesson"}
+            </Link>
           </div>
         )}
       </div>

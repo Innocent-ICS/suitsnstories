@@ -31,6 +31,9 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localTimeZone] = useState(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || "your local timezone"
+  );
 
   // Generate next 14 days
   const dates = Array.from({ length: 14 }, (_, i) => {
@@ -98,6 +101,22 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
     }
   }
 
+  function getSlotDate(time = selectedTime) {
+    return new Date(`${selectedDate}T${time}:00.000Z`);
+  }
+
+  function formatLocalRange(time = selectedTime) {
+    const start = getSlotDate(time);
+    const end = new Date(start.getTime() + serviceDuration * 60 * 1000);
+    return `${start.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    })} - ${end.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    })}`;
+  }
+
   if (step === "done") {
     const startDt = new Date(`${selectedDate}T${selectedTime}:00.000Z`);
     const endDt = new Date(startDt.getTime() + serviceDuration * 60 * 1000);
@@ -105,6 +124,7 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
       weekday: "long", month: "long", day: "numeric", year: "numeric",
     });
     const timeStr = `${selectedTime} – ${endDt.toISOString().slice(11, 16)} (UTC)`;
+    const localTimeStr = `${formatLocalRange()} (${localTimeZone})`;
 
     // Generate .ics calendar file
     const icsContent = [
@@ -158,6 +178,7 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
             <div>
               <p className="text-muted-foreground">Time</p>
               <p className="font-medium text-foreground">{timeStr}</p>
+              <p className="text-xs text-muted-foreground">{localTimeStr}</p>
             </div>
           </div>
           {notes && (
@@ -200,13 +221,13 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
   return (
     <div className="space-y-6">
       {/* Step indicator */}
-      <div className="flex items-center gap-2 text-sm">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         {["Coach", "Date", "Time", "Confirm"].map((label, i) => {
           const stepNames = ["coach", "date", "time", "confirm"];
           const current = stepNames.indexOf(step);
           return (
             <div key={label} className="flex items-center gap-2">
-              {i > 0 && <div className="w-8 h-px bg-border" />}
+              {i > 0 && <div className="hidden h-px w-8 bg-border sm:block" />}
               <span
                 className={`px-2.5 py-1 rounded-full text-xs font-medium ${
                   i <= current
@@ -224,7 +245,12 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
       {/* Step 1: Select coach */}
       {step === "coach" && (
         <div className="space-y-4">
-          <h2 className="text-lg font-medium">Select a Coach</h2>
+          <div>
+            <h2 className="text-lg font-medium">Select a Coach</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose who should guide the session. You can add context before confirming.
+            </p>
+          </div>
           {coaches.length === 0 ? (
             <p className="text-muted-foreground">No coaches available at this time.</p>
           ) : (
@@ -264,7 +290,10 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
               with {selectedCoach?.name}
             </span>
           </h2>
-          <div className="grid grid-cols-7 gap-2">
+          <div className="rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground">
+            Times are shown from Suits & Stories availability in UTC, with your local equivalent shown before you confirm.
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-7">
             {dates.map((date) => {
               const d = new Date(date + "T12:00:00");
               const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -309,6 +338,9 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
               })}
             </span>
           </h2>
+          <p className="text-sm text-muted-foreground">
+            Your device timezone: {localTimeZone}
+          </p>
           {loading ? (
             <p className="text-muted-foreground">Loading available times...</p>
           ) : slots.length === 0 ? (
@@ -316,7 +348,7 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
               <p className="text-muted-foreground">No available times on this date. Try another date.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               {slots.map((slot) => (
                 <button
                   key={slot.time}
@@ -330,7 +362,10 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
                         : "border-border bg-card hover:border-primary/40"
                   }`}
                 >
-                  {slot.time}
+                  <span className="block">{slot.time} UTC</span>
+                  <span className="mt-0.5 block text-xs font-normal text-muted-foreground no-underline">
+                    {formatLocalRange(slot.time)}
+                  </span>
                 </button>
               ))}
             </div>
@@ -362,7 +397,12 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-3">
               <span className="text-muted-foreground">Time</span>
-              <span className="text-foreground">{selectedTime}</span>
+              <span className="text-right text-foreground">
+                {selectedTime} UTC
+                <span className="block text-xs text-muted-foreground">
+                  {formatLocalRange()} ({localTimeZone})
+                </span>
+              </span>
             </div>
             <div className="flex justify-between text-sm border-t border-border pt-3">
               <span className="text-muted-foreground">Duration</span>
@@ -378,8 +418,11 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               className="mt-1 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              placeholder="Anything you'd like the coach to know beforehand..."
+              placeholder="Goal for the session, current challenge, or link to a pitch draft..."
             />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Good prep notes help the coach arrive with a sharper first response.
+            </p>
           </div>
 
           {error && (

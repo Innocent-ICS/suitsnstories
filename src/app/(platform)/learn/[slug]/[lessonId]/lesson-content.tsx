@@ -24,9 +24,10 @@ interface LessonContentProps {
   };
   isCompleted: boolean;
   isEnrolled: boolean;
+  nextLessonHref?: string;
 }
 
-export function LessonContent({ lesson, isCompleted, isEnrolled }: LessonContentProps) {
+export function LessonContent({ lesson, isCompleted, isEnrolled, nextLessonHref }: LessonContentProps) {
   const [loading, setLoading] = useState(false);
   const [completed, setCompleted] = useState(isCompleted);
   const [quizAnswers, setQuizAnswers] = useState<Record<string, string>>({});
@@ -85,12 +86,20 @@ export function LessonContent({ lesson, isCompleted, isEnrolled }: LessonContent
           {quizResult ? (
             <div className={`rounded-xl border p-6 ${quizResult.passed ? "border-emerald-500/30 bg-emerald-500/5" : "border-red-500/30 bg-red-500/5"}`}>
               <h3 className={`text-lg font-medium ${quizResult.passed ? "text-emerald-600" : "text-red-500"}`}>
-                {quizResult.passed ? "🎉 You passed!" : "Not quite — try again"}
+                {quizResult.passed ? "You passed." : "Not quite — try again"}
               </h3>
               <p className="text-sm text-muted-foreground mt-1">
                 Score: {Math.round(quizResult.score)}%
                 (passing: {lesson.quizData.passingScore}%)
               </p>
+              {quizResult.passed && nextLessonHref && (
+                <Button
+                  className="mt-4"
+                  onClick={() => router.push(nextLessonHref)}
+                >
+                  Continue
+                </Button>
+              )}
               {!quizResult.passed && (
                 <Button
                   variant="outline"
@@ -152,13 +161,20 @@ export function LessonContent({ lesson, isCompleted, isEnrolled }: LessonContent
       {isEnrolled && lesson.type !== "QUIZ" && (
         <div className="flex items-center gap-4 pt-4">
           {completed ? (
-            <div className="flex items-center gap-2 text-emerald-600">
-              <CheckCircleIcon className="h-5 w-5" />
-              <span className="text-sm font-medium">Lesson completed</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2 text-emerald-600">
+                <CheckCircleIcon className="h-5 w-5" />
+                <span className="text-sm font-medium">Lesson completed</span>
+              </div>
+              {nextLessonHref && (
+                <Button onClick={() => router.push(nextLessonHref)} size="sm">
+                  Continue
+                </Button>
+              )}
             </div>
           ) : (
             <Button onClick={handleMarkComplete} disabled={loading} variant="outline">
-              {loading ? "Saving..." : "Mark as Complete"}
+              {loading ? "Saving..." : "Mark complete"}
             </Button>
           )}
         </div>

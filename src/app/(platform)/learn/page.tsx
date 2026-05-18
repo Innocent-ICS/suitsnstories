@@ -5,6 +5,7 @@ import {
   AcademicCapIcon,
   BookOpenIcon,
   CheckBadgeIcon,
+  PlayCircleIcon,
 } from "@heroicons/react/24/outline";
 
 export default async function LearnPage() {
@@ -16,7 +17,10 @@ export default async function LearnPage() {
     orderBy: { createdAt: "asc" },
     include: {
       modules: {
-        include: { _count: { select: { lessons: true } } },
+        include: {
+          lessons: { orderBy: { order: "asc" } },
+          _count: { select: { lessons: true } },
+        },
         orderBy: { order: "asc" },
       },
     },
@@ -27,12 +31,16 @@ export default async function LearnPage() {
     ? await db.enrollment.findMany({
         where: { userId: session.user.id },
         include: {
-          _count: { select: { progress: true } },
+          progress: {
+            where: { completed: true },
+            select: { lessonId: true },
+          },
         },
       })
     : [];
 
   const enrolledCourseIds = new Set(enrollments.map((e) => e.courseId));
+  const enrollmentByCourseId = new Map(enrollments.map((e) => [e.courseId, e]));
 
   return (
     <div className="space-y-8">
@@ -58,9 +66,13 @@ export default async function LearnPage() {
                 (sum, m) => sum + m._count.lessons,
                 0
               );
-              const completedLessons = enrollment._count.progress;
+              const completedLessons = enrollment.progress.length;
               const progressPct =
                 totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+              const completedLessonIds = new Set(enrollment.progress.map((p) => p.lessonId));
+              const nextLesson = course.modules
+                .flatMap((m) => m.lessons)
+                .find((lesson) => !completedLessonIds.has(lesson.id));
 
               return (
                 <Link
@@ -78,7 +90,15 @@ export default async function LearnPage() {
                       </div>
                     )}
                   </div>
-                  <h3 className="font-medium text-foreground">{course.title}</h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-medium text-foreground">{course.title}</h3>
+                    {nextLesson && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        <PlayCircleIcon className="h-3.5 w-3.5" />
+                        Resume
+                      </span>
+                    )}
+                  </div>
                   <div className="mt-3 space-y-2">
                     <div className="flex justify-between text-xs text-muted-foreground">
                       <span>{completedLessons}/{totalLessons} lessons</span>
@@ -95,6 +115,11 @@ export default async function LearnPage() {
                         <CheckBadgeIcon className="h-4 w-4" />
                         Completed
                       </div>
+                    )}
+                    {!enrollment.completedAt && nextLesson && (
+                      <p className="text-xs text-muted-foreground">
+                        Next: {nextLesson.title}
+                      </p>
                     )}
                   </div>
                 </Link>
@@ -124,6 +149,10 @@ export default async function LearnPage() {
                 0
               );
               const isEnrolled = enrolledCourseIds.has(course.id);
+              const enrollment = enrollmentByCourseId.get(course.id);
+              const completedLessons = enrollment?.progress.length ?? 0;
+              const progressPct =
+                totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
               return (
                 <Link
@@ -146,6 +175,20 @@ export default async function LearnPage() {
                   <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
                     {course.description || "No description"}
                   </p>
+                  {isEnrolled && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{completedLessons}/{totalLessons} lessons complete</span>
+                        <span>{progressPct}%</span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-500"
+                          style={{ width: `${progressPct}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between mt-4 text-sm">
                     <span className="text-muted-foreground">
                       {course.modules.length} modules · {totalLessons} lessons

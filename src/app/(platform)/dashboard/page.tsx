@@ -19,7 +19,7 @@ export default async function DashboardPage() {
     const [users, courses, inquiries, bookings] = await Promise.all([
       db.user.count(),
       db.course.count({ where: { status: "PUBLISHED" } }),
-      db.inquiry.count({ where: { status: "NEW" } }),
+      db.inquiry.count({ where: { status: "new" } }),
       db.booking.count({ where: { status: { in: ["PENDING", "CONFIRMED"] } } }),
     ]);
     adminStats = { users, courses, inquiries, bookings };
@@ -36,11 +36,103 @@ export default async function DashboardPage() {
   // Fetch project count for clients
   let projectCount = 0;
   let enrollmentCount = 0;
+  let nextAction: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    href: string;
+    cta: string;
+  } | null = null;
   if (role === "CLIENT" && session?.user?.id) {
-    [projectCount, enrollmentCount] = await Promise.all([
+    const [projects, enrollments, upcomingBooking] = await Promise.all([
       db.project.count({ where: { clientId: session.user.id } }),
-      db.enrollment.count({ where: { userId: session.user.id } }),
+      db.enrollment.findMany({
+        where: { userId: session.user.id },
+        orderBy: { updatedAt: "desc" },
+        include: {
+          progress: {
+            where: { completed: true },
+            select: { lessonId: true },
+          },
+          course: {
+            include: {
+              modules: {
+                orderBy: { order: "asc" },
+                include: { lessons: { orderBy: { order: "asc" } } },
+              },
+            },
+          },
+        },
+      }),
+      db.booking.findFirst({
+        where: {
+          clientId: session.user.id,
+          status: { in: ["PENDING", "CONFIRMED"] },
+          startTime: { gte: new Date() },
+        },
+        orderBy: { startTime: "asc" },
+        include: {
+          service: { select: { title: true } },
+          coach: { select: { name: true } },
+        },
+      }),
     ]);
+    projectCount = projects;
+    enrollmentCount = enrollments.length;
+
+    const courseToResume = enrollments
+      .map((enrollment) => {
+        const completedLessonIds = new Set(enrollment.progress.map((p) => p.lessonId));
+        const nextLesson = enrollment.course.modules
+          .flatMap((module) => module.lessons)
+          .find((lesson) => !completedLessonIds.has(lesson.id));
+        return nextLesson
+          ? {
+              title: enrollment.course.title,
+              lessonTitle: nextLesson.title,
+              href: `/learn/${enrollment.course.slug}/${nextLesson.id}`,
+            }
+          : null;
+      })
+      .find(Boolean);
+
+    if (courseToResume) {
+      nextAction = {
+        eyebrow: "Continue learning",
+        title: courseToResume.lessonTitle,
+        description: `Resume ${courseToResume.title} from your next incomplete lesson.`,
+        href: courseToResume.href,
+        cta: "Open lesson",
+      };
+    } else if (upcomingBooking) {
+      nextAction = {
+        eyebrow: "Next session",
+        title: upcomingBooking.service.title,
+        description: `${new Date(upcomingBooking.startTime).toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        })} with ${upcomingBooking.coach.name || "your coach"}. Add notes or calendar details from bookings.`,
+        href: "/bookings",
+        cta: "View session",
+      };
+    } else if (projectCount === 0) {
+      nextAction = {
+        eyebrow: "Start your workspace",
+        title: "Create your first pitch project",
+        description: "Give the team one place to track your brief, deliverables, and feedback.",
+        href: "/projects",
+        cta: "Create project",
+      };
+    } else {
+      nextAction = {
+        eyebrow: "Keep momentum",
+        title: "Book your next strategy session",
+        description: "Pair your self-paced work with a focused coach review.",
+        href: "/bookings",
+        cta: "Find a time",
+      };
+    }
   }
 
   return (
@@ -138,6 +230,8 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {nextAction && <NextActionCard action={nextAction} />}
+
       {/* Admin quick links */}
       {role === "ADMIN" && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -197,6 +291,40 @@ function QuickAction({
       <h3 className="font-medium text-foreground">{title}</h3>
       <p className="text-sm text-muted-foreground mt-1">{description}</p>
     </a>
+  );
+}
+
+function NextActionCard({
+  action,
+}: {
+  action: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    href: string;
+    cta: string;
+  };
+}) {
+  return (
+    <div className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wider text-primary">
+            {action.eyebrow}
+          </p>
+          <h2 className="mt-1 font-medium text-foreground">{action.title}</h2>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            {action.description}
+          </p>
+        </div>
+        <a
+          href={action.href}
+          className="inline-flex shrink-0 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+        >
+          {action.cta}
+        </a>
+      </div>
+    </div>
   );
 }
 
