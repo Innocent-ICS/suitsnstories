@@ -1,0 +1,401 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { getAvailableSlots, createBooking } from "@/actions/booking";
+import { initBookingPayment } from "@/actions/payment";
+import { CalendarIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+
+interface Coach {
+  id: string;
+  name: string;
+  image: string | null;
+}
+
+interface BookingFormProps {
+  serviceId: string;
+  serviceDuration: number;
+  servicePrice: number;
+  coaches: Coach[];
+}
+
+export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches }: BookingFormProps) {
+  const router = useRouter();
+  const [step, setStep] = useState<"coach" | "date" | "time" | "confirm" | "done">("coach");
+  const [selectedCoach, setSelectedCoach] = useState<Coach | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
+  const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Generate next 14 days
+  const dates = Array.from({ length: 14 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() + i + 1); // Start from tomorrow
+    return d.toISOString().split("T")[0];
+  });
+
+  async function handleDateSelect(date: string) {
+    setSelectedDate(date);
+    setSelectedTime("");
+    setLoading(true);
+
+    try {
+      const available = await getAvailableSlots(selectedCoach!.id, serviceId, date);
+      setSlots(available);
+      setStep("time");
+    } catch {
+      setError("Failed to load available times");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleBook() {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const startTime = new Date(`${selectedDate}T${selectedTime}:00.000Z`).toISOString();
+
+      if (servicePrice > 0) {
+        // Paid booking — redirect to PayStack
+        const result = await initBookingPayment(
+          serviceId,
+          selectedCoach!.id,
+          startTime,
+          notes || undefined
+        );
+        if (result.success && result.paymentUrl) {
+          window.location.href = result.paymentUrl;
+          return;
+        } else {
+          setError(result.error || "Payment init failed");
+        }
+      } else {
+        // Free booking — book directly
+        const result = await createBooking({
+          serviceId,
+          coachId: selectedCoach!.id,
+          startTime,
+          notes: notes || undefined,
+        });
+
+        if (result.success) {
+          setStep("done");
+        } else {
+          setError(result.error || "Failed to create booking");
+        }
+      }
+    } catch {
+      setError("Something went wrong");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (step === "done") {
+    const startDt = new Date(`${selectedDate}T${selectedTime}:00.000Z`);
+    const endDt = new Date(startDt.getTime() + serviceDuration * 60 * 1000);
+    const dateStr = startDt.toLocaleDateString("en-US", {
+      weekday: "long", month: "long", day: "numeric", year: "numeric",
+    });
+    const timeStr = `${selectedTime} – ${endDt.toISOString().slice(11, 16)} (UTC)`;
+
+    // Generate .ics calendar file
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Suits & Stories//Booking//EN",
+      "BEGIN:VEVENT",
+      `DTSTART:${startDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
+      `DTEND:${endDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
+      `SUMMARY:Suits & Stories — Session with ${selectedCoach?.name}`,
+      `DESCRIPTION:${notes || "Coaching session booked via Suits & Stories"}`,
+      "STATUS:CONFIRMED",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    const icsBlob = new Blob([icsContent], { type: "text/calendar" });
+    const icsUrl = URL.createObjectURL(icsBlob);
+
+    // Google Calendar link
+    const gcalStart = startDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const gcalEnd = endDt.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(`Session with ${selectedCoach?.name} — Suits & Stories`)}&dates=${gcalStart}/${gcalEnd}&details=${encodeURIComponent(notes || "Coaching session")}`;
+
+    return (
+      <div className="space-y-6">
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-8 text-center space-y-3">
+          <CheckCircleIcon className="h-14 w-14 text-emerald-500 mx-auto" />
+          <h2 className="text-2xl font-serif text-foreground">Booking Confirmed!</h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            A confirmation email has been sent. Add this session to your calendar below.
+          </p>
+        </div>
+
+        {/* Session summary */}
+        <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+          <h3 className="font-medium text-foreground">Session Details</h3>
+          <div className="grid sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-muted-foreground">Coach</p>
+              <p className="font-medium text-foreground">{selectedCoach?.name}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Duration</p>
+              <p className="font-medium text-foreground">{serviceDuration} minutes</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Date</p>
+              <p className="font-medium text-foreground">{dateStr}</p>
+            </div>
+            <div>
+              <p className="text-muted-foreground">Time</p>
+              <p className="font-medium text-foreground">{timeStr}</p>
+            </div>
+          </div>
+          {notes && (
+            <div className="border-t border-border pt-3">
+              <p className="text-muted-foreground text-sm">Your Notes</p>
+              <p className="text-sm text-foreground mt-1">{notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Calendar actions */}
+        <div className="flex flex-wrap gap-3">
+          <a
+            href={icsUrl}
+            download="suits-stories-session.ics"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-medium hover:shadow-sm transition-all"
+          >
+            <CalendarIcon className="h-4 w-4" />
+            Download .ics File
+          </a>
+          <a
+            href={gcalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border bg-card text-sm font-medium hover:shadow-sm transition-all"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19.5 3h-3V1.5h-1.5V3h-6V1.5H7.5V3h-3C3.675 3 3 3.675 3 4.5v15c0 .825.675 1.5 1.5 1.5h15c.825 0 1.5-.675 1.5-1.5v-15c0-.825-.675-1.5-1.5-1.5zm0 16.5h-15V8.25h15v11.25z"/>
+            </svg>
+            Add to Google Calendar
+          </a>
+          <Button onClick={() => router.push("/bookings")} variant="outline">
+            View All Bookings
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Step indicator */}
+      <div className="flex items-center gap-2 text-sm">
+        {["Coach", "Date", "Time", "Confirm"].map((label, i) => {
+          const stepNames = ["coach", "date", "time", "confirm"];
+          const current = stepNames.indexOf(step);
+          return (
+            <div key={label} className="flex items-center gap-2">
+              {i > 0 && <div className="w-8 h-px bg-border" />}
+              <span
+                className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                  i <= current
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Step 1: Select coach */}
+      {step === "coach" && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-medium">Select a Coach</h2>
+          {coaches.length === 0 ? (
+            <p className="text-muted-foreground">No coaches available at this time.</p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {coaches.map((coach) => (
+                <button
+                  key={coach.id}
+                  onClick={() => { setSelectedCoach(coach); setStep("date"); }}
+                  className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all text-left"
+                >
+                  {coach.image ? (
+                    <img src={coach.image} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-medium text-primary">
+                        {coach.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-medium text-foreground">{coach.name}</p>
+                    <p className="text-xs text-muted-foreground">Available for booking</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Step 2: Select date */}
+      {step === "date" && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-medium">
+            Select a Date
+            <span className="text-sm text-muted-foreground font-normal ml-2">
+              with {selectedCoach?.name}
+            </span>
+          </h2>
+          <div className="grid grid-cols-7 gap-2">
+            {dates.map((date) => {
+              const d = new Date(date + "T12:00:00");
+              const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+              return (
+                <button
+                  key={date}
+                  onClick={() => handleDateSelect(date)}
+                  disabled={isWeekend}
+                  className={`p-3 rounded-lg border text-center transition-all ${
+                    isWeekend
+                      ? "border-border bg-muted/30 text-muted-foreground opacity-50 cursor-not-allowed"
+                      : "border-border bg-card hover:border-primary/40 hover:shadow-sm"
+                  }`}
+                >
+                  <p className="text-xs text-muted-foreground">
+                    {d.toLocaleDateString("en-US", { weekday: "short" })}
+                  </p>
+                  <p className="text-lg font-medium">{d.getDate()}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {d.toLocaleDateString("en-US", { month: "short" })}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setStep("coach")}>
+            ← Back
+          </Button>
+        </div>
+      )}
+
+      {/* Step 3: Select time */}
+      {step === "time" && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-medium">
+            Select a Time
+            <span className="text-sm text-muted-foreground font-normal ml-2">
+              {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
+          </h2>
+          {loading ? (
+            <p className="text-muted-foreground">Loading available times...</p>
+          ) : slots.length === 0 ? (
+            <div className="rounded-lg border border-border p-6 text-center">
+              <p className="text-muted-foreground">No available times on this date. Try another date.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+              {slots.map((slot) => (
+                <button
+                  key={slot.time}
+                  onClick={() => { setSelectedTime(slot.time); setStep("confirm"); }}
+                  disabled={!slot.available}
+                  className={`p-2.5 rounded-lg border text-sm font-medium transition-all ${
+                    !slot.available
+                      ? "border-border bg-muted/30 text-muted-foreground line-through cursor-not-allowed"
+                      : selectedTime === slot.time
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-card hover:border-primary/40"
+                  }`}
+                >
+                  {slot.time}
+                </button>
+              ))}
+            </div>
+          )}
+          <Button variant="outline" size="sm" onClick={() => setStep("date")}>
+            ← Back
+          </Button>
+        </div>
+      )}
+
+      {/* Step 4: Confirm */}
+      {step === "confirm" && (
+        <div className="space-y-5">
+          <h2 className="text-lg font-medium">Confirm Booking</h2>
+          <div className="rounded-xl border border-border bg-card p-5 space-y-3">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Coach</span>
+              <span className="text-foreground font-medium">{selectedCoach?.name}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-border pt-3">
+              <span className="text-muted-foreground">Date</span>
+              <span className="text-foreground">
+                {new Date(selectedDate + "T12:00:00").toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-border pt-3">
+              <span className="text-muted-foreground">Time</span>
+              <span className="text-foreground">{selectedTime}</span>
+            </div>
+            <div className="flex justify-between text-sm border-t border-border pt-3">
+              <span className="text-muted-foreground">Duration</span>
+              <span className="text-foreground">{serviceDuration} minutes</span>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes (optional)</Label>
+            <textarea
+              id="notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              className="mt-1 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm resize-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              placeholder="Anything you'd like the coach to know beforehand..."
+            />
+          </div>
+
+          {error && (
+            <p className="text-sm text-red-500 bg-red-500/10 p-3 rounded-lg">{error}</p>
+          )}
+
+          <div className="flex gap-3">
+            <Button onClick={handleBook} disabled={loading}>
+              {loading ? "Booking..." : "Confirm Booking"}
+            </Button>
+            <Button variant="outline" onClick={() => setStep("time")}>
+              ← Back
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
