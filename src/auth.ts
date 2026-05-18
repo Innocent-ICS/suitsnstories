@@ -22,6 +22,7 @@ declare module "next-auth" {
 import { type DefaultSession } from "next-auth";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    trustHost: true,
     adapter: PrismaAdapter(db),
     session: { strategy: "jwt" },
     providers: [
