@@ -11,7 +11,7 @@ import {
 } from "@/lib/security/request";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /**
  * Accepts two content types:
