@@ -32,7 +32,7 @@ interface ChatCompletionResponse {
 
 const DEFAULT_GROQ_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 const DEFAULT_OPENROUTER_MODEL = "nvidia/nemotron-nano-12b-v2-vl:free";
-const DEFAULT_PROVIDER_TIMEOUT_MS = 90_000;
+const DEFAULT_PROVIDER_TIMEOUT_MS = 45_000;
 
 export function hasGroqKey() {
   return Boolean(process.env.GROQ_KEY || process.env.GROQ_API_KEY);

@@ -214,7 +214,14 @@ type RunAgentArgs = {
 
 async function runAgentSafely(args: RunAgentArgs) {
   try {
-    return await runAgent(args);
+    // Hard deadline per agent: 60s. Prevents a hung LLM call from blocking the pipeline.
+    const result = await Promise.race([
+      runAgent(args),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`${args.kind} agent timed out after 60 seconds.`)), 60_000)
+      ),
+    ]);
+    return result;
   } catch (error) {
     return buildFallbackAgentResult(args.kind, args.deckInput, error);
   }
