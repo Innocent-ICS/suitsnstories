@@ -28,7 +28,7 @@ export default async function AdminLayout({
   const role = user.role as UserRole;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-dvh bg-background">
       <Sidebar role={role} userName={user.name} />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar
@@ -37,7 +37,7 @@ export default async function AdminLayout({
           userRole={role}
           userImage={user.image}
         />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-6 lg:p-8">
           {children}
         </main>
       </div>

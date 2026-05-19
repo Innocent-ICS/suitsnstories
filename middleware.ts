@@ -40,6 +40,7 @@ export function middleware(req: NextRequest) {
         pathname.startsWith("/coaching") ||
         pathname.startsWith("/workshops") ||
         pathname.startsWith("/bookings") ||
+        pathname.startsWith("/recommendations") ||
         pathname.startsWith("/billing") ||
         pathname.startsWith("/settings");
 
@@ -56,6 +57,7 @@ export function middleware(req: NextRequest) {
         pathname.startsWith("/engineers") ||
         pathname.startsWith("/analytics") ||
         pathname.startsWith("/perceptoscope-security") ||
+        pathname.startsWith("/recommendations-admin") ||
         pathname.startsWith("/inquiries");
 
     if (isAdminRoute && !isLoggedIn) {

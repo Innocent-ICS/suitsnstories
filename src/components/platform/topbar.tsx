@@ -49,7 +49,7 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card/80 backdrop-blur-sm px-3 sm:px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-card/80 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-sm sm:px-4 md:px-6">
       {/* Mobile menu button */}
       <button
         className="md:hidden p-2 rounded-lg hover:bg-muted"
@@ -144,7 +144,7 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
       </div>
 
       {mobileNavOpen && (
-        <div className="fixed inset-x-0 top-16 z-40 border-b border-border bg-card shadow-lg md:hidden">
+        <div className="fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] z-40 border-b border-border bg-card shadow-lg md:hidden">
           <nav className="max-h-[calc(100vh-4rem)] overflow-y-auto px-3 py-3">
             <ul className="grid gap-1">
               {navItems.map((item) => {

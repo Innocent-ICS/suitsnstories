@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { StarIcon } from "@heroicons/react/24/solid";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { testimonials } from "@/data/testimonials";
+import { testimonials, type Testimonial } from "@/data/testimonials";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 
 // We duplicate the testimonials to create a seamless infinite loop.
@@ -18,7 +17,12 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 // Actually, to support sliding properly, we can just use a large enough cycle.
 // Let's use flexible cycling.
 
-export function Testimonials() {
+interface TestimonialsProps {
+    items?: Testimonial[];
+}
+
+export function Testimonials({ items }: TestimonialsProps) {
+    const displayTestimonials = items?.length ? items : testimonials;
     const [itemsPerPage, setItemsPerPage] = useState(3);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -30,19 +34,19 @@ export function Testimonials() {
     // This gives 4+4+4 = 12 items.
     // Main items are at indices 4, 5, 6, 7.
     const extendedTestimonials = [
-        ...testimonials,
-        ...testimonials,
-        ...testimonials,
+        ...displayTestimonials,
+        ...displayTestimonials,
+        ...displayTestimonials,
     ];
 
     // Start at the beginning of the "main" set.
     // Index 0 in main set is index `testimonials.length` in extended set.
-    const START_INDEX = testimonials.length;
+    const START_INDEX = displayTestimonials.length;
 
     // Initialize to start index
     useEffect(() => {
         setCurrentIndex(START_INDEX);
-    }, []); // Run once on mount
+    }, [START_INDEX]);
 
     // Handle Resize
     useEffect(() => {
@@ -75,10 +79,12 @@ export function Testimonials() {
     // Auto-slide
     useEffect(() => {
         const timer = setInterval(() => {
-            handleNext();
+            if (isTransitioning) return;
+            setIsTransitioning(true);
+            setCurrentIndex((prev) => prev + 1);
         }, 5000);
         return () => clearInterval(timer);
-    }, [currentIndex, isTransitioning]); // Dep on isTransitioning helps avoid spam
+    }, [isTransitioning]);
 
     // Handle Loop Logic (Transition End)
     useEffect(() => {
@@ -89,7 +95,7 @@ export function Testimonials() {
             setIsTransitioning(false);
 
             // Check for boundaries and snap
-            const totalOriginal = testimonials.length;
+            const totalOriginal = displayTestimonials.length;
 
             // If we moved past the end of the main set:
             // Main set ends at START_INDEX + totalOriginal - 1.
@@ -108,7 +114,7 @@ export function Testimonials() {
         }, transitionDuration);
 
         return () => clearTimeout(timer);
-    }, [currentIndex, isTransitioning]);
+    }, [currentIndex, displayTestimonials.length, isTransitioning, START_INDEX]);
 
     // Calculate generic transform percentage
     // We want to shift by `currentIndex * (100 / itemsPerPage)` percent
@@ -187,12 +193,17 @@ export function Testimonials() {
 
                                         <div className="border-t border-border pt-6 flex items-center gap-4">
                                             <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-muted">
-                                                <Image
-                                                    src={testimonial.image}
-                                                    alt={testimonial.name}
-                                                    fill
-                                                    className="object-cover"
-                                                />
+                                                {testimonial.image ? (
+                                                    <img
+                                                        src={testimonial.image}
+                                                        alt={testimonial.name}
+                                                        className="h-full w-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full w-full items-center justify-center bg-primary/10 text-sm font-semibold text-primary">
+                                                        {getInitials(testimonial.name)}
+                                                    </div>
+                                                )}
                                             </div>
                                             <div>
                                                 <h4 className="font-bold text-foreground text-sm">
@@ -211,13 +222,13 @@ export function Testimonials() {
 
                     {/* Indicators - Mapped to ORIGINAL length */}
                     <div className="flex justify-center gap-2 mt-8">
-                        {testimonials.map((_, idx) => {
+                        {displayTestimonials.map((_, idx) => {
                             // Determine active state based on wrapped current index
                             // relative index = (currentIndex - START_INDEX) % length
                             // But currentIndex can be negative conceptually if we allow it, but here we clamped.
 
-                            let relativeIndex = (currentIndex - START_INDEX) % testimonials.length;
-                            if (relativeIndex < 0) relativeIndex += testimonials.length;
+                            let relativeIndex = (currentIndex - START_INDEX) % displayTestimonials.length;
+                            if (relativeIndex < 0) relativeIndex += displayTestimonials.length;
 
                             return (
                                 <button
@@ -243,4 +254,13 @@ export function Testimonials() {
             </div>
         </section>
     );
+}
+
+function getInitials(name: string) {
+    return name
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase())
+        .join("");
 }

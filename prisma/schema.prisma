@@ -47,6 +47,7 @@ model User {
   managedAcceleratorPrograms AcceleratorProgram[]   @relation("ProgramManager")
   programMemberships         ProgramMember[]
   perceptoscopeAnalyses      PerceptoscopeAnalysis[]
+  recommendations            Recommendation[]
   createdAt                  DateTime               @default(now())
   updatedAt                  DateTime               @updatedAt
 }
@@ -612,4 +613,29 @@ model SecurityAuditLog {
   @@index([action, createdAt])
   @@index([targetType, targetId])
   @@index([createdAt])
+}
+
+// ── Recommendations / Testimonials ──────────────────────────────────────
+
+enum RecommendationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Recommendation {
+  id         String               @id @default(cuid())
+  userId     String
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  text       String               // The recommendation body (max ~1000 chars)
+  stars      Int                  @default(5) // 1-5 star rating
+  role       String?              // Optional role override e.g. "CEO, Todoke"
+  status     RecommendationStatus @default(PENDING)
+  featured   Boolean              @default(false)
+  reviewedAt DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  @@index([status])
+  @@index([userId])
 }

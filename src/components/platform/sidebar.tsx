@@ -13,6 +13,7 @@ import {
   InboxIcon,
   RocketLaunchIcon,
   ShieldCheckIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { StethoscopeIcon } from "@/components/icons/stethoscope-icon";
 import type { UserRole } from "@/types/auth";
@@ -29,6 +30,7 @@ const clientNav: NavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
   { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon },
+  { label: "Recommend", href: "/recommendations", icon: ChatBubbleLeftRightIcon },
 ];
 
 const programManagerNav: NavItem[] = [
@@ -37,6 +39,7 @@ const programManagerNav: NavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Learn", href: "/learn", icon: AcademicCapIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
+  { label: "Recommend", href: "/recommendations", icon: ChatBubbleLeftRightIcon },
 ];
 
 const coachNav: NavItem[] = [
@@ -44,12 +47,14 @@ const coachNav: NavItem[] = [
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Learn", href: "/learn", icon: AcademicCapIcon },
+  { label: "Recommend", href: "/recommendations", icon: ChatBubbleLeftRightIcon },
 ];
 
 const engineerNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: HomeIcon },
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
+  { label: "Recommend", href: "/recommendations", icon: ChatBubbleLeftRightIcon },
 ];
 
 const adminNav: NavItem[] = [
@@ -64,6 +69,7 @@ const adminNav: NavItem[] = [
   { label: "Services", href: "/services-admin", icon: CalendarIcon },
   { label: "Users", href: "/clients", icon: UsersIcon },
   { label: "Inquiries", href: "/inquiries", icon: InboxIcon },
+  { label: "Recommendations", href: "/recommendations-admin", icon: ChatBubbleLeftRightIcon },
 ];
 
 export function getNavForRole(role: UserRole): NavItem[] {

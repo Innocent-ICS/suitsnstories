@@ -51,7 +51,7 @@ export function Services() {
                                     <h4 className="text-xl font-serif font-medium text-foreground mt-2">Self-Paced Course</h4>
                                 </div>
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl font-bold text-foreground">GH₵49</span>
+                                    <span className="text-4xl font-bold text-foreground">GH₵490</span>
                                     <span className="text-sm text-muted-foreground font-medium">/ one-time</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground leading-relaxed">
@@ -94,7 +94,7 @@ export function Services() {
                                 </div>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-sm text-muted-foreground font-medium">Starting at</span>
-                                    <span className="text-4xl font-bold text-foreground">GH₵500</span>
+                                    <span className="text-4xl font-bold text-foreground">GH₵5000</span>
                                 </div>
                                 <p className="text-sm text-muted-foreground leading-relaxed">
                                     Live, high-impact workshops for teams preparing for fundraises or pivots.
