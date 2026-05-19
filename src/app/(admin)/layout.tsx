@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { Sidebar } from "@/components/platform/sidebar";
 import { Topbar } from "@/components/platform/topbar";
+import { MobileBottomNav } from "@/components/platform/mobile-bottom-nav";
 import type { UserRole } from "@/types/auth";
 
 export default async function AdminLayout({
@@ -37,10 +38,11 @@ export default async function AdminLayout({
           userRole={role}
           userImage={user.image}
         />
-        <main className="flex-1 overflow-y-auto p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] md:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:p-6 lg:p-8">
           {children}
         </main>
       </div>
+      <MobileBottomNav role={role} />
     </div>
   );
 }

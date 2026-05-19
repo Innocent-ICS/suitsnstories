@@ -48,7 +48,7 @@ export function EnrollButton({ courseId, price }: EnrollButtonProps) {
 
   return (
     <div>
-      <Button onClick={handleEnroll} disabled={loading} className="w-full sm:w-auto">
+      <Button onClick={handleEnroll} disabled={loading} className="min-h-11 w-full rounded-xl px-5 font-semibold sm:w-auto">
         {loading
           ? "Processing..."
           : price === 0

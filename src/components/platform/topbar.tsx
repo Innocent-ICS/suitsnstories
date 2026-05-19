@@ -5,18 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
-  Bars3Icon,
-  XMarkIcon,
   ArrowRightStartOnRectangleIcon,
   UserCircleIcon,
   Cog6ToothIcon,
   SunIcon,
   MoonIcon,
+  ChatBubbleLeftRightIcon,
 } from "@heroicons/react/24/outline";
 import { useTheme } from "next-themes";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { UserRole } from "@/types/auth";
-import { getNavForRole } from "@/components/platform/sidebar";
 
 interface TopbarProps {
   userName?: string | null;
@@ -27,10 +25,8 @@ interface TopbarProps {
 
 export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
   const pathname = usePathname();
-  const navItems = getNavForRole(userRole);
   const isDark = resolvedTheme === "dark";
 
   // Get page title from pathname
@@ -49,32 +45,34 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
   };
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-card/80 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-sm sm:px-4 md:px-6">
-      {/* Mobile menu button */}
-      <button
-        className="md:hidden p-2 rounded-lg hover:bg-muted"
-        onClick={() => setMobileNavOpen(!mobileNavOpen)}
-        aria-label="Open navigation"
-        aria-expanded={mobileNavOpen}
-      >
-        {mobileNavOpen ? (
-          <XMarkIcon className="h-5 w-5" />
-        ) : (
-          <Bars3Icon className="h-5 w-5" />
-        )}
-      </button>
-
+    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-card/85 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:px-4 md:px-6">
       {/* Page title */}
-      <h1 className="min-w-0 flex-1 truncate px-3 text-base font-medium text-foreground sm:text-lg md:px-0">
+      <h1 className="min-w-0 flex-1 truncate px-1 text-[1.05rem] font-semibold leading-none text-foreground sm:text-lg md:px-0">
         {pageTitle}
       </h1>
 
       {/* Right side actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <Link
+          href="/recommendations"
+          className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+          aria-label="Recommendations"
+        >
+          <ChatBubbleLeftRightIcon className="h-5 w-5" />
+        </Link>
+
+        <Link
+          href="/settings"
+          className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden"
+          aria-label="Settings"
+        >
+          <Cog6ToothIcon className="h-5 w-5" />
+        </Link>
+
         {/* Theme toggle */}
         <button
           onClick={() => setTheme(isDark ? "light" : "dark")}
-          className="p-2 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+          className="grid h-10 w-10 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           aria-label="Toggle theme"
         >
           <SunIcon className="hidden h-5 w-5 dark:block" />
@@ -85,7 +83,7 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
         <div className="relative">
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-muted transition-colors"
+            className="flex items-center gap-2 rounded-full p-1 transition-colors hover:bg-muted"
           >
             <UserAvatar src={userImage} name={userName} />
             <div className="hidden sm:block text-left">
@@ -143,49 +141,6 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
         </div>
       </div>
 
-      {mobileNavOpen && (
-        <div className="fixed inset-x-0 top-[calc(4rem+env(safe-area-inset-top))] z-40 border-b border-border bg-card shadow-lg md:hidden">
-          <nav className="max-h-[calc(100vh-4rem)] overflow-y-auto px-3 py-3">
-            <ul className="grid gap-1">
-              {navItems.map((item) => {
-                const isActive =
-                  pathname === item.href ||
-                  (item.href !== "/dashboard" && pathname.startsWith(item.href));
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setMobileNavOpen(false)}
-                      className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                        isActive
-                          ? "bg-primary/10 text-primary"
-                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                      }`}
-                    >
-                      <item.icon className="h-5 w-5 shrink-0" />
-                      {item.label}
-                    </Link>
-                  </li>
-                );
-              })}
-              <li>
-                <Link
-                  href="/settings"
-                  onClick={() => setMobileNavOpen(false)}
-                  className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                    pathname === "/settings"
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <Cog6ToothIcon className="h-5 w-5 shrink-0" />
-                  Settings
-                </Link>
-              </li>
-            </ul>
-          </nav>
-        </div>
-      )}
     </header>
   );
 }

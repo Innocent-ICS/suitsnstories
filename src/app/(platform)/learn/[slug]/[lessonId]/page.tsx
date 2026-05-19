@@ -75,9 +75,9 @@ export default async function LessonPage({ params }: LessonPageProps) {
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1] : null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-4xl space-y-5 sm:space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.8125rem] text-muted-foreground sm:text-sm">
         <Link href="/learn" className="hover:text-foreground transition-colors">Learn</Link>
         <span>/</span>
         <Link href={`/learn/${slug}`} className="hover:text-foreground transition-colors">
@@ -89,10 +89,12 @@ export default async function LessonPage({ params }: LessonPageProps) {
 
       {/* Lesson header */}
       <div>
-        <p className="text-sm text-muted-foreground mb-1">
+        <p className="mb-1 text-[0.9375rem] text-muted-foreground sm:text-sm">
           {lesson.module.title}
         </p>
-        <h1 className="text-2xl font-serif text-foreground">{lesson.title}</h1>
+        <h1 className="text-[1.7rem] font-serif leading-tight text-foreground sm:text-2xl">
+          {lesson.title}
+        </h1>
       </div>
 
       {/* Lesson content */}
@@ -110,14 +112,14 @@ export default async function LessonPage({ params }: LessonPageProps) {
       />
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-6 border-t border-border">
+      <div className="flex items-center justify-between gap-4 border-t border-border pt-5 sm:pt-6">
         {prevLesson ? (
           <Link
             href={`/learn/${slug}/${prevLesson.id}`}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex min-w-0 items-center gap-2 text-[0.9375rem] leading-5 text-muted-foreground transition-colors hover:text-foreground sm:text-sm"
           >
             <ChevronLeftIcon className="h-4 w-4" />
-            {prevLesson.title}
+            <span className="line-clamp-2">{prevLesson.title}</span>
           </Link>
         ) : (
           <div />
@@ -125,15 +127,15 @@ export default async function LessonPage({ params }: LessonPageProps) {
         {nextLesson ? (
           <Link
             href={`/learn/${slug}/${nextLesson.id}`}
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="flex min-w-0 items-center gap-2 text-right text-[0.9375rem] leading-5 text-muted-foreground transition-colors hover:text-foreground sm:text-sm"
           >
-            {nextLesson.title}
+            <span className="line-clamp-2">{nextLesson.title}</span>
             <ChevronRightIcon className="h-4 w-4" />
           </Link>
         ) : (
           <Link
             href={`/learn/${slug}`}
-            className="text-sm text-primary hover:underline"
+            className="text-[0.9375rem] font-medium text-primary hover:underline sm:text-sm"
           >
             Back to course overview →
           </Link>

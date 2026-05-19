@@ -66,7 +66,7 @@ export function LessonContent({ lesson, isCompleted, isEnrolled, nextLessonHref 
       {/* Text content */}
       {lesson.type === "TEXT" && lesson.content && (
         <div
-          className="prose prose-neutral dark:prose-invert max-w-none leading-relaxed"
+          className="prose prose-neutral dark:prose-invert max-w-none text-[15px] leading-7 sm:text-base"
           dangerouslySetInnerHTML={{ __html: lesson.content }}
         />
       )}
@@ -74,7 +74,7 @@ export function LessonContent({ lesson, isCompleted, isEnrolled, nextLessonHref 
       {/* Video content */}
       {lesson.type === "VIDEO" && lesson.videoUrl && (
         <div className="space-y-4">
-          <div className="aspect-video rounded-xl overflow-hidden bg-black">
+          <div className="aspect-video overflow-hidden rounded-2xl bg-black shadow-sm">
             <VideoEmbed url={lesson.videoUrl} />
           </div>
         </div>
@@ -185,27 +185,45 @@ export function LessonContent({ lesson, isCompleted, isEnrolled, nextLessonHref 
 
 // ── Video Embed Helper ─────────────────────────────────────────────────
 
-function getEmbedUrl(url: string): { type: "iframe" | "video"; src: string } {
-  // YouTube: extract video ID from various URL formats
-  const ytPatterns = [
-    /(?:youtube\.com\/watch\?v=|youtube\.com\/embed\/|youtu\.be\/|youtube\.com\/v\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/,
-  ];
+function getEmbedUrl(rawUrl: string): { type: "iframe" | "video"; src: string } {
+  const url = rawUrl.trim();
+  const rawYouTubeId = url.match(/^[a-zA-Z0-9_-]{11}$/)?.[0];
 
-  for (const pattern of ytPatterns) {
-    const match = url.match(pattern);
-    if (match) {
-      return { type: "iframe", src: `https://www.youtube.com/embed/${match[1]}` };
+  if (rawYouTubeId) {
+    return { type: "iframe", src: getYouTubeEmbedSrc(rawYouTubeId) };
+  }
+
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace(/^www\./, "").replace(/^m\./, "");
+    const pathParts = parsed.pathname.split("/").filter(Boolean);
+
+    if (host === "youtu.be") {
+      const id = pathParts[0];
+      if (id) return { type: "iframe", src: getYouTubeEmbedSrc(id) };
     }
+
+    if (host === "youtube.com" || host === "youtube-nocookie.com") {
+      const id =
+        parsed.searchParams.get("v") ||
+        (["embed", "shorts", "live", "v"].includes(pathParts[0]) ? pathParts[1] : null);
+
+      if (id) return { type: "iframe", src: getYouTubeEmbedSrc(id) };
+    }
+
+    if (host === "vimeo.com" || host === "player.vimeo.com") {
+      const id = host === "player.vimeo.com" ? pathParts[1] : pathParts[0];
+      if (id) return { type: "iframe", src: `https://player.vimeo.com/video/${id}` };
+    }
+  } catch {
+    // Fall through to direct video; admins may paste hosted mp4 URLs.
   }
 
-  // Vimeo
-  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) {
-    return { type: "iframe", src: `https://player.vimeo.com/video/${vimeoMatch[1]}` };
-  }
-
-  // Direct video file
   return { type: "video", src: url };
+}
+
+function getYouTubeEmbedSrc(id: string) {
+  return `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
 }
 
 function VideoEmbed({ url }: { url: string }) {
@@ -215,12 +233,14 @@ function VideoEmbed({ url }: { url: string }) {
     return (
       <iframe
         src={src}
-        className="w-full h-full"
+        title="Lesson video"
+        className="h-full w-full"
         allowFullScreen
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        referrerPolicy="strict-origin-when-cross-origin"
       />
     );
   }
 
-  return <video src={src} controls className="w-full h-full" />;
+  return <video src={src} controls className="h-full w-full" />;
 }
