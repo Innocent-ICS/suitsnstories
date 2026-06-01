@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { markLessonComplete, submitQuiz } from "@/actions/enrollment";
+import { getEmbeddableVideo } from "@/lib/video-embed";
 import { CheckCircleIcon } from "@heroicons/react/24/outline";
 
 interface LessonContentProps {
@@ -185,49 +186,8 @@ export function LessonContent({ lesson, isCompleted, isEnrolled, nextLessonHref 
 
 // ── Video Embed Helper ─────────────────────────────────────────────────
 
-function getEmbedUrl(rawUrl: string): { type: "iframe" | "video"; src: string } {
-  const url = rawUrl.trim();
-  const rawYouTubeId = url.match(/^[a-zA-Z0-9_-]{11}$/)?.[0];
-
-  if (rawYouTubeId) {
-    return { type: "iframe", src: getYouTubeEmbedSrc(rawYouTubeId) };
-  }
-
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, "").replace(/^m\./, "");
-    const pathParts = parsed.pathname.split("/").filter(Boolean);
-
-    if (host === "youtu.be") {
-      const id = pathParts[0];
-      if (id) return { type: "iframe", src: getYouTubeEmbedSrc(id) };
-    }
-
-    if (host === "youtube.com" || host === "youtube-nocookie.com") {
-      const id =
-        parsed.searchParams.get("v") ||
-        (["embed", "shorts", "live", "v"].includes(pathParts[0]) ? pathParts[1] : null);
-
-      if (id) return { type: "iframe", src: getYouTubeEmbedSrc(id) };
-    }
-
-    if (host === "vimeo.com" || host === "player.vimeo.com") {
-      const id = host === "player.vimeo.com" ? pathParts[1] : pathParts[0];
-      if (id) return { type: "iframe", src: `https://player.vimeo.com/video/${id}` };
-    }
-  } catch {
-    // Fall through to direct video; admins may paste hosted mp4 URLs.
-  }
-
-  return { type: "video", src: url };
-}
-
-function getYouTubeEmbedSrc(id: string) {
-  return `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
-}
-
 function VideoEmbed({ url }: { url: string }) {
-  const { type, src } = getEmbedUrl(url);
+  const { type, src } = getEmbeddableVideo(url);
 
   if (type === "iframe") {
     return (

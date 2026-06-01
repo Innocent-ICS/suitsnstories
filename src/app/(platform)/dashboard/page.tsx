@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import type { UserRole } from "@/types/auth";
+import { isBookableStaffRole } from "@/lib/booking-roles";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { PaymentBanner } from "./payment-banner";
@@ -37,9 +38,9 @@ export default async function DashboardPage() {
     adminStats = { users, courses, inquiries, bookings };
   }
 
-  // Fetch upcoming bookings count for coaches
+  // Fetch upcoming bookings count for bookable staff
   let upcomingCount = 0;
-  if (role === "COACH" && session?.user?.id) {
+  if (isBookableStaffRole(role) && session?.user?.id) {
     upcomingCount = await db.booking.count({
       where: { coachId: session.user.id, status: { in: ["PENDING", "CONFIRMED"] }, startTime: { gte: new Date() } },
     });
@@ -241,7 +242,7 @@ export default async function DashboardPage() {
             />
             <QuickAction
               title="Upcoming Sessions"
-              description="Scheduled collaboration sessions"
+              description={`${upcomingCount} sessions scheduled`}
               href="/bookings"
               accent="green"
             />
@@ -272,6 +273,12 @@ export default async function DashboardPage() {
               description="Review available pitch curriculum"
               href="/learn"
               accent="purple"
+            />
+            <QuickAction
+              title="Upcoming Sessions"
+              description={`${upcomingCount} sessions scheduled`}
+              href="/bookings"
+              accent="green"
             />
           </>
         )}

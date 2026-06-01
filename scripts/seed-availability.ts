@@ -2,12 +2,13 @@
 // Run: npx tsx scripts/seed-availability.ts
 
 import { PrismaClient } from "@prisma/client";
+import { DEFAULT_BOOKING_TIMEZONE, getBookableStaffRoles } from "../src/lib/booking-roles";
 
 const db = new PrismaClient();
 
 async function main() {
   const coaches = await db.user.findMany({
-    where: { role: { in: ["COACH", "ADMIN"] } },
+    where: { role: { in: getBookableStaffRoles() } },
     select: { id: true, name: true },
   });
 
@@ -27,7 +28,7 @@ async function main() {
       dayOfWeek: day,
       startTime: "09:00",
       endTime: "17:00",
-      timezone: "Africa/Johannesburg",
+      timezone: DEFAULT_BOOKING_TIMEZONE,
       isActive: true,
     }));
 

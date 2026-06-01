@@ -214,13 +214,13 @@ export function BookingForm({ serviceId, serviceDuration, servicePrice, coaches 
       {step === "coach" && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-lg font-medium">Select a Coach</h2>
+            <h2 className="text-lg font-medium">Select a Coach or Mentor</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Choose who should guide the session. You can add context before confirming.
             </p>
           </div>
           {coaches.length === 0 ? (
-            <p className="text-muted-foreground">No coaches available at this time.</p>
+            <p className="text-muted-foreground">No coaches or mentors available at this time.</p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {coaches.map((coach) => (

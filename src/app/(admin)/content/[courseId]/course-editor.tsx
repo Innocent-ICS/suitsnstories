@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { getEmbeddableVideo } from "@/lib/video-embed";
 import {
   updateCourse,
   deleteCourse,
@@ -505,16 +506,7 @@ function LessonEditor({
             placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
           />
           {videoUrl && (
-            <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black max-w-md">
-              <iframe
-                src={getYouTubeEmbedUrl(videoUrl)}
-                title="Lesson video preview"
-                className="w-full h-full"
-                allowFullScreen
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                referrerPolicy="strict-origin-when-cross-origin"
-              />
-            </div>
+            <VideoPreview url={videoUrl} />
           )}
         </div>
       )}
@@ -566,41 +558,23 @@ function LessonEditor({
 
 // ── Video URL Helper ───────────────────────────────────────────────────
 
-function getYouTubeEmbedUrl(rawUrl: string): string {
-  const url = rawUrl.trim();
-  const rawYouTubeId = url.match(/^[a-zA-Z0-9_-]{11}$/)?.[0];
+function VideoPreview({ url }: { url: string }) {
+  const { type, src } = getEmbeddableVideo(url);
 
-  if (rawYouTubeId) return getYouTubeEmbedSrc(rawYouTubeId);
-
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace(/^www\./, "").replace(/^m\./, "");
-    const pathParts = parsed.pathname.split("/").filter(Boolean);
-
-    if (host === "youtu.be") {
-      const id = pathParts[0];
-      if (id) return getYouTubeEmbedSrc(id);
-    }
-
-    if (host === "youtube.com" || host === "youtube-nocookie.com") {
-      const id =
-        parsed.searchParams.get("v") ||
-        (["embed", "shorts", "live", "v"].includes(pathParts[0]) ? pathParts[1] : null);
-
-      if (id) return getYouTubeEmbedSrc(id);
-    }
-
-    if (host === "vimeo.com" || host === "player.vimeo.com") {
-      const id = host === "player.vimeo.com" ? pathParts[1] : pathParts[0];
-      if (id) return `https://player.vimeo.com/video/${id}`;
-    }
-  } catch {
-    // Leave direct video or invalid URLs untouched for validation elsewhere.
-  }
-
-  return url;
-}
-
-function getYouTubeEmbedSrc(id: string) {
-  return `https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1`;
+  return (
+    <div className="mt-2 aspect-video rounded-lg overflow-hidden bg-black max-w-md">
+      {type === "iframe" ? (
+        <iframe
+          src={src}
+          title="Lesson video preview"
+          className="w-full h-full"
+          allowFullScreen
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      ) : (
+        <video src={src} controls className="h-full w-full" />
+      )}
+    </div>
+  );
 }

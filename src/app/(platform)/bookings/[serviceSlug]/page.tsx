@@ -1,6 +1,8 @@
 import { db } from "@/lib/db";
 import { notFound } from "next/navigation";
 import { BookingForm } from "./booking-form";
+import { getBookableStaffRoles } from "@/lib/booking-roles";
+import Link from "next/link";
 
 interface ServiceBookingPageProps {
   params: Promise<{ serviceSlug: string }>;
@@ -15,10 +17,10 @@ export default async function ServiceBookingPage({ params }: ServiceBookingPageP
 
   if (!service) notFound();
 
-  // Get all coaches (availability checked at slot selection step)
+  // Get all bookable staff (availability is checked at slot selection step)
   const coaches = await db.user.findMany({
     where: {
-      role: { in: ["COACH", "ADMIN"] },
+      role: { in: getBookableStaffRoles() },
     },
     select: { id: true, name: true, image: true },
   });
@@ -26,12 +28,12 @@ export default async function ServiceBookingPage({ params }: ServiceBookingPageP
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <a
+        <Link
           href="/bookings"
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           ← Back to services
-        </a>
+        </Link>
         <h1 className="text-3xl font-serif text-foreground mt-4">{service.title}</h1>
         {service.description && (
           <p className="text-muted-foreground mt-2">{service.description}</p>

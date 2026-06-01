@@ -15,6 +15,7 @@ import {
   assertSameOriginRequest,
   getServerActionSecurityContext,
 } from "@/lib/security/request";
+import { DEFAULT_BOOKING_TIMEZONE, isBookableStaffRole } from "@/lib/booking-roles";
 
 type CoursePaymentData = {
   type: "course_enrollment";
@@ -210,13 +211,15 @@ export async function initBookingPayment(
 ) {
   const userId = await requireAuth();
 
-  const [user, service] = await Promise.all([
+  const [user, service, coach] = await Promise.all([
     db.user.findUnique({ where: { id: userId }, select: { email: true } }),
     db.serviceOffering.findUnique({ where: { id: serviceId } }),
+    db.user.findUnique({ where: { id: coachId }, select: { role: true } }),
   ]);
 
   if (!user?.email) return { success: false, error: "Email required" };
   if (!service || !service.isActive) return { success: false, error: "Service not available" };
+  if (!isBookableStaffRole(coach?.role)) return { success: false, error: "Coach not available" };
   if (service.price === 0) return { success: false, error: "Service is free" };
 
   const reference = generateReference("booking");
@@ -387,6 +390,7 @@ export async function fulfillPayment(reference: string) {
         notes: meta.notes,
         status: "CONFIRMED",
         paymentId: payment.id,
+        timezone: DEFAULT_BOOKING_TIMEZONE,
       },
     });
     revalidatePath("/bookings");

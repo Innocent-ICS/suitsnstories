@@ -4,6 +4,7 @@ import Link from "next/link";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { BookingActions } from "./booking-actions";
 import { CalendarButtons } from "./calendar-buttons";
+import { isBookableStaffRole } from "@/lib/booking-roles";
 import {
   ClockIcon,
   CalendarIcon,
@@ -18,7 +19,7 @@ export default async function BookingsPage() {
     ? await db.user.findUnique({ where: { id: userId }, select: { role: true } })
     : null;
   const role = user?.role || "CLIENT";
-  const isCoachOrAdmin = role === "COACH" || role === "ADMIN";
+  const isSessionLead = isBookableStaffRole(role);
 
   // Get active services
   const services = await db.serviceOffering.findMany({
@@ -29,8 +30,8 @@ export default async function BookingsPage() {
   // Get bookings based on role
   const bookings = userId
     ? await db.booking.findMany({
-        where: isCoachOrAdmin
-          ? { coachId: userId }  // Coaches see incoming bookings
+        where: isSessionLead
+          ? { coachId: userId }  // Session leads see incoming bookings
           : { clientId: userId }, // Clients see their own bookings
         orderBy: { startTime: "desc" },
         include: {
@@ -55,7 +56,7 @@ export default async function BookingsPage() {
       <div>
         <h1 className="text-3xl font-serif text-foreground">Bookings</h1>
         <p className="text-muted-foreground mt-2">
-          {isCoachOrAdmin
+          {isSessionLead
             ? "Your upcoming client sessions and booking requests."
             : "Book a consultation, diagnostic session, or workshop."}
         </p>
@@ -66,7 +67,7 @@ export default async function BookingsPage() {
         <div className="space-y-4">
           <h2 className="text-xl font-medium text-foreground flex items-center gap-2">
             <CalendarIcon className="h-5 w-5 text-primary" />
-            {isCoachOrAdmin ? "Upcoming Client Sessions" : "Upcoming Sessions"}
+            {isSessionLead ? "Upcoming Client Sessions" : "Upcoming Sessions"}
           </h2>
           <div className="space-y-3">
             {upcomingBookings.map((booking) => (
@@ -99,7 +100,7 @@ export default async function BookingsPage() {
                             </span>
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
                               <UserIcon className="h-4 w-4" />
-                              {isCoachOrAdmin
+                              {isSessionLead
                                 ? `${booking.client.name || "Client"} · ${booking.client.email || "No email"}`
                                 : `with ${booking.coach.name || "Coach"}`}
                             </span>
@@ -109,17 +110,17 @@ export default async function BookingsPage() {
                       </div>
 
                       <div className="flex items-center gap-3">
-                        {isCoachOrAdmin ? (
+                        {isSessionLead ? (
                           <UserAvatar src={booking.client.image} name={booking.client.name} size="md" />
                         ) : (
                           <UserAvatar src={booking.coach.image} name={booking.coach.name} size="md" />
                         )}
                         <div>
                           <p className="text-sm font-medium text-foreground">
-                            {isCoachOrAdmin ? booking.client.name || "Client" : booking.coach.name || "Coach"}
+                            {isSessionLead ? booking.client.name || "Client" : booking.coach.name || "Coach"}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {isCoachOrAdmin ? "Client session" : "Your session lead"}
+                            {isSessionLead ? "Client session" : "Your session lead"}
                           </p>
                         </div>
                       </div>
@@ -150,14 +151,14 @@ export default async function BookingsPage() {
                     </div>
                     <div className="flex flex-wrap gap-2">
                     {/* Coach actions: confirm, complete, no-show */}
-                    {isCoachOrAdmin && booking.status === "PENDING" && (
+                    {isSessionLead && booking.status === "PENDING" && (
                       <BookingActions bookingId={booking.id} actions={["CONFIRMED", "CANCELLED"]} />
                     )}
-                    {isCoachOrAdmin && booking.status === "CONFIRMED" && (
+                    {isSessionLead && booking.status === "CONFIRMED" && (
                       <BookingActions bookingId={booking.id} actions={["COMPLETED", "NO_SHOW"]} />
                     )}
                     {/* Client can cancel */}
-                    {!isCoachOrAdmin && booking.status !== "CANCELLED" && (
+                    {!isSessionLead && booking.status !== "CANCELLED" && (
                       <BookingActions bookingId={booking.id} actions={["CANCELLED"]} />
                     )}
                     </div>
@@ -170,7 +171,7 @@ export default async function BookingsPage() {
       )}
 
       {/* Available services — only for clients */}
-      {!isCoachOrAdmin && (
+      {!isSessionLead && (
         <div className="space-y-4">
           <h2 className="text-xl font-medium text-foreground">Available Services</h2>
           {services.length === 0 ? (
@@ -223,8 +224,8 @@ export default async function BookingsPage() {
               >
                 <div className="flex items-center gap-3">
                   <UserAvatar
-                    src={isCoachOrAdmin ? booking.client.image : booking.coach.image}
-                    name={isCoachOrAdmin ? booking.client.name : booking.coach.name}
+                    src={isSessionLead ? booking.client.image : booking.coach.image}
+                    name={isSessionLead ? booking.client.name : booking.coach.name}
                   />
                   <div>
                     <p className="text-sm font-medium text-foreground">{booking.service.title}</p>
@@ -235,7 +236,7 @@ export default async function BookingsPage() {
                         year: "numeric",
                       })}
                       {" · "}
-                      {isCoachOrAdmin ? booking.client.name : `with ${booking.coach.name}`}
+                      {isSessionLead ? booking.client.name : `with ${booking.coach.name}`}
                     </p>
                   </div>
                 </div>

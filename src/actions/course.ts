@@ -4,6 +4,7 @@ import * as z from "zod";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { isValidVideoInput, normalizeVideoUrlInput } from "@/lib/video-embed";
 
 // ── Schemas ────────────────────────────────────────────────────────────
 
@@ -23,17 +24,41 @@ const ModuleSchema = z.object({
   order: z.number().min(0).default(0),
 });
 
+const VideoUrlSchema = z
+  .string()
+  .trim()
+  .refine(isValidVideoInput, "Enter a valid YouTube, Vimeo, or video URL")
+  .optional()
+  .or(z.literal(""));
+
 const LessonSchema = z.object({
   moduleId: z.string().min(1),
   title: z.string().min(1, "Title is required").max(200).trim(),
   type: z.enum(["TEXT", "VIDEO", "QUIZ"]).default("TEXT"),
   content: z.string().optional(),
-  videoUrl: z.string().url().optional().or(z.literal("")),
+  videoUrl: VideoUrlSchema,
   videoDuration: z.number().optional(),
   quizData: z.any().optional(),
   order: z.number().min(0).default(0),
   isFree: z.boolean().default(false),
 });
+
+const LessonUpdateSchema = z.object({
+  moduleId: z.string().min(1).optional(),
+  title: z.string().min(1, "Title is required").max(200).trim().optional(),
+  type: z.enum(["TEXT", "VIDEO", "QUIZ"]).optional(),
+  content: z.string().optional(),
+  videoUrl: VideoUrlSchema,
+  videoDuration: z.number().optional(),
+  quizData: z.any().optional(),
+  order: z.number().min(0).optional(),
+  isFree: z.boolean().optional(),
+});
+
+function getVideoUrlForStorage(videoUrl: string | null | undefined) {
+  const normalized = normalizeVideoUrlInput(videoUrl);
+  return normalized || null;
+}
 
 // ── Auth Check ─────────────────────────────────────────────────────────
 
@@ -94,12 +119,12 @@ export async function createModule(data: z.input<typeof ModuleSchema>) {
     orderBy: { order: "desc" },
   });
 
-  const module = await db.module.create({
+  const createdModule = await db.module.create({
     data: { ...validated, order: validated.order || (lastModule?.order ?? -1) + 1 },
   });
 
   revalidatePath(`/content/${validated.courseId}`);
-  return { success: true, moduleId: module.id };
+  return { success: true, moduleId: createdModule.id };
 }
 
 export async function updateModule(moduleId: string, data: Partial<z.infer<typeof ModuleSchema>>) {
@@ -134,7 +159,7 @@ export async function createLesson(data: z.input<typeof LessonSchema>) {
   const lesson = await db.lesson.create({
     data: {
       ...validated,
-      videoUrl: validated.videoUrl || null,
+      videoUrl: getVideoUrlForStorage(validated.videoUrl),
       order: validated.order || (lastLesson?.order ?? -1) + 1,
     },
   });
@@ -146,9 +171,15 @@ export async function createLesson(data: z.input<typeof LessonSchema>) {
 
 export async function updateLesson(lessonId: string, data: Partial<z.infer<typeof LessonSchema>>) {
   await requireAdmin();
+  const validated = LessonUpdateSchema.parse(data);
+  const updateData = {
+    ...validated,
+    ...("videoUrl" in validated ? { videoUrl: getVideoUrlForStorage(validated.videoUrl) } : {}),
+  };
+
   const lesson = await db.lesson.update({
     where: { id: lessonId },
-    data: { ...data, videoUrl: data.videoUrl || null },
+    data: updateData,
     include: { module: true },
   });
   revalidatePath(`/content/${lesson.module.courseId}`);

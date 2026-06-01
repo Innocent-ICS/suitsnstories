@@ -5,6 +5,11 @@ import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
 import { sendEmail } from "@/lib/email/resend";
+import {
+  DEFAULT_BOOKING_TIMEZONE,
+  isBookableStaffRole,
+} from "@/lib/booking-roles";
+import { getDefaultAvailabilityForDay } from "@/lib/booking-availability";
 
 // ── Schemas ────────────────────────────────────────────────────────────
 
@@ -22,7 +27,7 @@ const AvailabilitySchema = z.object({
   dayOfWeek: z.number().min(0).max(6),
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
-  timezone: z.string().default("Africa/Johannesburg"),
+  timezone: z.string().default(DEFAULT_BOOKING_TIMEZONE),
 });
 
 const BookingSchema = z.object({
@@ -73,12 +78,12 @@ export async function deleteService(id: string) {
   return { success: true };
 }
 
-// ── Availability Actions (Coach/Admin) ─────────────────────────────────
+// ── Availability Actions (Bookable Staff) ──────────────────────────────
 
 export async function setAvailability(slots: z.input<typeof AvailabilitySchema>[]) {
   const userId = await requireAuth();
   const user = await db.user.findUnique({ where: { id: userId }, select: { role: true } });
-  if (user?.role !== "COACH" && user?.role !== "ADMIN") throw new Error("Unauthorized");
+  if (!isBookableStaffRole(user?.role)) throw new Error("Unauthorized");
 
   // Delete existing and replace
   await db.availability.deleteMany({ where: { coachId: userId } });
@@ -93,18 +98,30 @@ export async function setAvailability(slots: z.input<typeof AvailabilitySchema>[
 }
 
 export async function getAvailableSlots(coachId: string, serviceId: string, date: string) {
-  const service = await db.serviceOffering.findUnique({ where: { id: serviceId } });
-  if (!service) return [];
+  const [service, coach] = await Promise.all([
+    db.serviceOffering.findUnique({ where: { id: serviceId } }),
+    db.user.findUnique({ where: { id: coachId }, select: { role: true } }),
+  ]);
+  if (!service || !service.isActive || !isBookableStaffRole(coach?.role)) return [];
 
   const targetDate = new Date(date);
+  if (Number.isNaN(targetDate.getTime())) return [];
+
   const dayOfWeek = targetDate.getUTCDay();
 
-  // Get coach availability for this day
-  const availability = await db.availability.findMany({
-    where: { coachId, dayOfWeek, isActive: true },
-  });
+  const [availability, activeAvailabilityCount] = await Promise.all([
+    db.availability.findMany({
+      where: { coachId, dayOfWeek, isActive: true },
+    }),
+    db.availability.count({
+      where: { coachId, isActive: true },
+    }),
+  ]);
 
-  if (availability.length === 0) return [];
+  const availabilityWindows =
+    activeAvailabilityCount > 0 ? availability : getDefaultAvailabilityForDay(dayOfWeek);
+
+  if (availabilityWindows.length === 0) return [];
 
   // Get existing bookings for this day
   const dayStart = new Date(date);
@@ -122,7 +139,7 @@ export async function getAvailableSlots(coachId: string, serviceId: string, date
 
   // Generate slots
   const slots: { time: string; available: boolean }[] = [];
-  for (const avail of availability) {
+  for (const avail of availabilityWindows) {
     const [startH, startM] = avail.startTime.split(":").map(Number);
     const [endH, endM] = avail.endTime.split(":").map(Number);
     const startMinutes = startH * 60 + startM;
@@ -153,8 +170,12 @@ export async function createBooking(data: z.input<typeof BookingSchema>) {
   const userId = await requireAuth();
   const validated = BookingSchema.parse(data);
 
-  const service = await db.serviceOffering.findUnique({ where: { id: validated.serviceId } });
+  const [service, coach] = await Promise.all([
+    db.serviceOffering.findUnique({ where: { id: validated.serviceId } }),
+    db.user.findUnique({ where: { id: validated.coachId }, select: { role: true } }),
+  ]);
   if (!service || !service.isActive) return { success: false, error: "Service not available" };
+  if (!isBookableStaffRole(coach?.role)) return { success: false, error: "Coach not available" };
 
   const startTime = new Date(validated.startTime);
   const endTime = new Date(startTime.getTime() + service.duration * 60 * 1000);
@@ -182,6 +203,7 @@ export async function createBooking(data: z.input<typeof BookingSchema>) {
         endTime,
         notes: validated.notes || null,
         status: "CONFIRMED",
+        timezone: DEFAULT_BOOKING_TIMEZONE,
       },
     });
 

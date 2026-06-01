@@ -38,7 +38,7 @@ const securityHeaders = [
       "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
       "font-src 'self' data:",
       "connect-src 'self' https://api.paystack.co https://api.groq.com https://openrouter.ai https://*.supabase.co",
-      "frame-src 'self' https://checkout.paystack.com https://js.paystack.co",
+      "frame-src 'self' https://checkout.paystack.com https://js.paystack.co https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
     ].join("; "),
   },
 ];
