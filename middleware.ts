@@ -27,7 +27,10 @@ export function middleware(req: NextRequest) {
 
     // Auth routes: redirect logged-in users away from signin/signup
     const isAuthRoute = pathname.startsWith("/auth");
-    if (isAuthRoute && isLoggedIn) {
+    const isAuthUtilityRoute =
+        pathname.startsWith("/auth/verify-email") ||
+        pathname.startsWith("/auth/resend-verification");
+    if (isAuthRoute && isLoggedIn && !isAuthUtilityRoute) {
         return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
     }
 

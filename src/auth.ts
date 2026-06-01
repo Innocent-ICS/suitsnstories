@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import { type DefaultSession } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
@@ -10,6 +11,7 @@ declare module "next-auth" {
     interface User {
         id?: string;
         role?: string;
+        emailVerified?: Date | null;
     }
     interface Session {
         user: {
@@ -18,8 +20,6 @@ declare module "next-auth" {
         } & DefaultSession["user"]
     }
 }
-
-import { type DefaultSession } from "next-auth";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     trustHost: true,
@@ -44,9 +44,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null;
                 }
 
-                const user = await db.user.findUnique({
+                const email = String(credentials.email).trim().toLowerCase();
+                const user = await db.user.findFirst({
                     where: {
-                        email: credentials.email as string,
+                        email: { equals: email, mode: "insensitive" },
                     },
                 });
 
@@ -73,7 +74,35 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
-        async jwt({ token, user, trigger, session, account }) {
+        async signIn({ user, account }) {
+            if (account?.provider === "credentials") {
+                if (!user.id) return false;
+
+                const dbUser = await db.user.findUnique({
+                    where: { id: user.id },
+                    select: { emailVerified: true },
+                });
+
+                return !!dbUser?.emailVerified;
+            }
+
+            if (account?.provider === "google") {
+                if (user.id) {
+                    await db.user.update({
+                        where: { id: user.id },
+                        data: { emailVerified: new Date() },
+                    }).catch((error) => console.error("[AUTH_GOOGLE_EMAIL_VERIFY]", error));
+                } else if (user.email) {
+                    await db.user.update({
+                        where: { email: user.email },
+                        data: { emailVerified: new Date() },
+                    }).catch((error) => console.error("[AUTH_GOOGLE_EMAIL_VERIFY]", error));
+                }
+            }
+
+            return true;
+        },
+        async jwt({ token, user, trigger, account }) {
             // On sign in (when user object is available)
             if (user) {
                 token.id = user.id;

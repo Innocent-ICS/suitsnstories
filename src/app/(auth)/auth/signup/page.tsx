@@ -1,23 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import { register } from "@/actions/auth";
 import { ArrowPathIcon } from "@heroicons/react/24/outline";
 
 export default function SignUpPage() {
-    const router = useRouter();
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const [password, setPassword] = useState("");
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
+        const form = event.currentTarget;
         setLoading(true);
         setError(null);
+        setSuccess(null);
 
         const formData = new FormData(event.currentTarget);
         const name = formData.get("name") as string;
@@ -30,9 +33,10 @@ export default function SignUpPage() {
             if (result.error) {
                 setError(result.error);
             } else {
-                router.push("/auth/signin");
+                setSuccess(result.success || "Check your email to verify your account.");
+                form.reset();
             }
-        } catch (error) {
+        } catch {
             setError("Something went wrong");
         } finally {
             setLoading(false);
@@ -90,13 +94,24 @@ export default function SignUpPage() {
                                 required
                                 className="mt-1 h-11"
                                 placeholder="******"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
+                            <div className="mt-2">
+                                <PasswordStrength password={password} />
+                            </div>
                         </div>
                     </div>
 
                     {error && (
                         <div className="text-sm text-red-500 text-center bg-red-500/10 p-3 rounded">
                             {error}
+                        </div>
+                    )}
+
+                    {success && (
+                        <div className="text-sm text-emerald-600 text-center bg-emerald-500/10 p-3 rounded">
+                            {success}
                         </div>
                     )}
 

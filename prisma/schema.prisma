@@ -29,6 +29,7 @@ model User {
   role                       UserRole               @default(CLIENT)
   accounts                   Account[]
   sessions                   Session[]
+  emailVerificationTokens    EmailVerificationToken[]
   profile                    Profile?
   enrollments                Enrollment[]
   quizAttempts               QuizAttempt[]
@@ -77,6 +78,20 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email     String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([email])
+  @@index([expiresAt])
 }
 
 // ── User Profile ───────────────────────────────────────────────────────

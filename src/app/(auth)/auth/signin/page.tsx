@@ -21,7 +21,9 @@ function SignInForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+    const verified = searchParams.get("verified") === "1";
     const [error, setError] = useState<string | null>(null);
+    const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
 
@@ -29,6 +31,7 @@ function SignInForm() {
         event.preventDefault();
         setLoading(true);
         setError(null);
+        setNeedsVerification(false);
 
         const formData = new FormData(event.currentTarget);
         const email = formData.get("email") as string;
@@ -42,7 +45,9 @@ function SignInForm() {
             });
 
             if (result?.error) {
-                setError("Invalid email or password");
+                const unverified = result.error === "AccessDenied";
+                setNeedsVerification(unverified);
+                setError(unverified ? "Please verify your email before signing in." : "Invalid email or password");
             } else {
                 router.push(callbackUrl);
                 router.refresh();
@@ -147,6 +152,19 @@ function SignInForm() {
                     {error && (
                         <div className="text-sm text-red-500 text-center bg-red-500/10 p-3 rounded">
                             {error}
+                            {needsVerification && (
+                                <div className="mt-2">
+                                    <Link href="/auth/resend-verification" className="font-medium text-primary hover:underline">
+                                        Resend verification email
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {verified && !error && (
+                        <div className="text-sm text-emerald-600 text-center bg-emerald-500/10 p-3 rounded">
+                            Email verified. You can sign in now.
                         </div>
                     )}
 

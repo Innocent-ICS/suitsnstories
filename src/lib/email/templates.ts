@@ -82,6 +82,36 @@ export function welcomeEmail(name: string): { subject: string; html: string; tex
   };
 }
 
+export function emailVerificationEmail({
+  name,
+  verifyUrl,
+}: {
+  name: string;
+  verifyUrl: string;
+}): { subject: string; html: string; text: string } {
+  const firstName = escapeHtml(name.split(" ")[0] || "there");
+  const safeVerifyUrl = escapeHtml(verifyUrl);
+
+  return {
+    subject: "Verify your Suits & Stories email",
+    html: wrap(`
+      <h2 style="font-size: 24px; margin: 0 0 16px;">Verify your email, ${firstName}.</h2>
+      <p style="font-size: 15px; line-height: 1.6; color: #475569;">
+        Confirm this email address so your Suits & Stories account is ready to use.
+      </p>
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="${safeVerifyUrl}" style="${buttonStyle}">
+          Verify email
+        </a>
+      </div>
+      <p style="font-size: 13px; line-height: 1.6; color: #64748b;">
+        This link expires in 24 hours. If you did not create a Suits & Stories account, you can ignore this email.
+      </p>
+    `),
+    text: `Verify your Suits & Stories email: ${verifyUrl}\n\nThis link expires in 24 hours. If you did not create a Suits & Stories account, you can ignore this email.`,
+  };
+}
+
 export function inquiryReceivedEmail(name: string): { subject: string; html: string; text: string } {
   const firstName = name.split(" ")[0];
   return {

@@ -17,6 +17,7 @@ import {
   updateLesson,
   deleteLesson,
 } from "@/actions/course";
+import { QuizEditor } from "./quiz-editor";
 import {
   PlusIcon,
   TrashIcon,
@@ -455,6 +456,7 @@ function LessonEditor({
   const [content, setContent] = useState(lesson.content || "");
   const [videoUrl, setVideoUrl] = useState(lesson.videoUrl || "");
   const [isFree, setIsFree] = useState(lesson.isFree);
+  const [quizData, setQuizData] = useState(lesson.quizData || { questions: [], passingScore: 70 });
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
@@ -465,6 +467,7 @@ function LessonEditor({
         title,
         content: lesson.type === "TEXT" ? content : undefined,
         videoUrl: lesson.type === "VIDEO" ? videoUrl : undefined,
+        quizData: lesson.type === "QUIZ" ? quizData : undefined,
         isFree,
       });
       router.refresh();
@@ -512,24 +515,10 @@ function LessonEditor({
       )}
 
       {lesson.type === "QUIZ" && (
-        <div className="rounded-lg border border-border p-4 bg-card">
-          <p className="text-sm text-muted-foreground">
-            Quiz editor — edit quiz data as JSON for now. A visual quiz builder is coming in a future update.
-          </p>
-          <textarea
-            defaultValue={JSON.stringify(lesson.quizData || { questions: [], passingScore: 70 }, null, 2)}
-            rows={10}
-            className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            onBlur={(e) => {
-              try {
-                const parsed = JSON.parse(e.target.value);
-                updateLesson(lesson.id, { quizData: parsed });
-              } catch {
-                // Invalid JSON — ignore
-              }
-            }}
-          />
-        </div>
+        <QuizEditor
+          initialData={quizData}
+          onChange={setQuizData}
+        />
       )}
 
       <div className="flex items-center gap-4">

@@ -29,34 +29,46 @@ export default async function DashboardPage() {
   // Fetch real stats for admin
   let adminStats = { users: 0, courses: 0, inquiries: 0, bookings: 0 };
   if (role === "ADMIN") {
-    const [users, courses, inquiries, bookings] = await Promise.all([
-      db.user.count(),
-      db.course.count({ where: { status: "PUBLISHED" } }),
-      db.inquiry.count({ where: { status: "new" } }),
-      db.booking.count({ where: { status: { in: ["PENDING", "CONFIRMED"] } } }),
-    ]);
-    adminStats = { users, courses, inquiries, bookings };
+    try {
+      const [users, courses, inquiries, bookings] = await Promise.all([
+        db.user.count(),
+        db.course.count({ where: { status: "PUBLISHED" } }),
+        db.inquiry.count({ where: { status: "new" } }),
+        db.booking.count({ where: { status: { in: ["PENDING", "CONFIRMED"] } } }),
+      ]);
+      adminStats = { users, courses, inquiries, bookings };
+    } catch (err) {
+      console.error("[DASHBOARD] Failed to fetch admin stats:", err);
+    }
   }
 
   // Fetch upcoming bookings count for bookable staff
   let upcomingCount = 0;
   if (isBookableStaffRole(role) && session?.user?.id) {
-    upcomingCount = await db.booking.count({
-      where: { coachId: session.user.id, status: { in: ["PENDING", "CONFIRMED"] }, startTime: { gte: new Date() } },
-    });
+    try {
+      upcomingCount = await db.booking.count({
+        where: { coachId: session.user.id, status: { in: ["PENDING", "CONFIRMED"] }, startTime: { gte: new Date() } },
+      });
+    } catch (err) {
+      console.error("[DASHBOARD] Failed to fetch upcoming bookings:", err);
+    }
   }
 
   let programStats = { programs: 0, seats: 0, pending: 0 };
   if (role === "PROGRAM_MANAGER" && session?.user?.id) {
-    const programs = await db.acceleratorProgram.findMany({
-      where: { managerId: session.user.id },
-      select: { seatsPurchased: true, status: true },
-    });
-    programStats = {
-      programs: programs.length,
-      seats: programs.reduce((sum, program) => sum + program.seatsPurchased, 0),
-      pending: programs.filter((program) => program.status === "PENDING_PAYMENT").length,
-    };
+    try {
+      const programs = await db.acceleratorProgram.findMany({
+        where: { managerId: session.user.id },
+        select: { seatsPurchased: true, status: true },
+      });
+      programStats = {
+        programs: programs.length,
+        seats: programs.reduce((sum, program) => sum + program.seatsPurchased, 0),
+        pending: programs.filter((program) => program.status === "PENDING_PAYMENT").length,
+      };
+    } catch (err) {
+      console.error("[DASHBOARD] Failed to fetch program stats:", err);
+    }
   }
 
   // Fetch project count for clients
@@ -70,94 +82,98 @@ export default async function DashboardPage() {
     cta: string;
   } | null = null;
   if (role === "CLIENT" && session?.user?.id) {
-    const [projects, enrollments, upcomingBooking] = await Promise.all([
-      db.project.count({ where: { clientId: session.user.id } }),
-      db.enrollment.findMany({
-        where: { userId: session.user.id },
-        orderBy: { updatedAt: "desc" },
-        include: {
-          progress: {
-            where: { completed: true },
-            select: { lessonId: true },
-          },
-          course: {
-            include: {
-              modules: {
-                orderBy: { order: "asc" },
-                include: { lessons: { orderBy: { order: "asc" } } },
+    try {
+      const [projects, enrollments, upcomingBooking] = await Promise.all([
+        db.project.count({ where: { clientId: session.user.id } }),
+        db.enrollment.findMany({
+          where: { userId: session.user.id },
+          orderBy: { updatedAt: "desc" },
+          include: {
+            progress: {
+              where: { completed: true },
+              select: { lessonId: true },
+            },
+            course: {
+              include: {
+                modules: {
+                  orderBy: { order: "asc" },
+                  include: { lessons: { orderBy: { order: "asc" } } },
+                },
               },
             },
           },
-        },
-      }),
-      db.booking.findFirst({
-        where: {
-          clientId: session.user.id,
-          status: { in: ["PENDING", "CONFIRMED"] },
-          startTime: { gte: new Date() },
-        },
-        orderBy: { startTime: "asc" },
-        include: {
-          service: { select: { title: true } },
-          coach: { select: { name: true } },
-        },
-      }),
-    ]);
-    projectCount = projects;
-    enrollmentCount = enrollments.length;
+        }),
+        db.booking.findFirst({
+          where: {
+            clientId: session.user.id,
+            status: { in: ["PENDING", "CONFIRMED"] },
+            startTime: { gte: new Date() },
+          },
+          orderBy: { startTime: "asc" },
+          include: {
+            service: { select: { title: true } },
+            coach: { select: { name: true } },
+          },
+        }),
+      ]);
+      projectCount = projects;
+      enrollmentCount = enrollments.length;
 
-    const courseToResume = enrollments
-      .map((enrollment) => {
-        const completedLessonIds = new Set(enrollment.progress.map((p) => p.lessonId));
-        const nextLesson = enrollment.course.modules
-          .flatMap((module) => module.lessons)
-          .find((lesson) => !completedLessonIds.has(lesson.id));
-        return nextLesson
-          ? {
-              title: enrollment.course.title,
-              lessonTitle: nextLesson.title,
-              href: `/learn/${enrollment.course.slug}/${nextLesson.id}`,
-            }
-          : null;
-      })
-      .find(Boolean);
+      const courseToResume = enrollments
+        .map((enrollment) => {
+          const completedLessonIds = new Set(enrollment.progress.map((p) => p.lessonId));
+          const nextLesson = enrollment.course.modules
+            .flatMap((module) => module.lessons)
+            .find((lesson) => !completedLessonIds.has(lesson.id));
+          return nextLesson
+            ? {
+                title: enrollment.course.title,
+                lessonTitle: nextLesson.title,
+                href: `/learn/${enrollment.course.slug}/${nextLesson.id}`,
+              }
+            : null;
+        })
+        .find(Boolean);
 
-    if (courseToResume) {
-      nextAction = {
-        eyebrow: "Continue learning",
-        title: courseToResume.lessonTitle,
-        description: `Resume ${courseToResume.title} from your next incomplete lesson.`,
-        href: courseToResume.href,
-        cta: "Open lesson",
-      };
-    } else if (upcomingBooking) {
-      nextAction = {
-        eyebrow: "Next session",
-        title: upcomingBooking.service.title,
-        description: `${new Date(upcomingBooking.startTime).toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        })} with ${upcomingBooking.coach.name || "your coach"}. Add notes or calendar details from bookings.`,
-        href: "/bookings",
-        cta: "View session",
-      };
-    } else if (projectCount === 0) {
-      nextAction = {
-        eyebrow: "Start your workspace",
-        title: "Create your first pitch project",
-        description: "Give the team one place to track your brief, deliverables, and feedback.",
-        href: "/projects",
-        cta: "Create project",
-      };
-    } else {
-      nextAction = {
-        eyebrow: "Keep momentum",
-        title: "Book your next strategy session",
-        description: "Pair your self-paced work with a focused coach review.",
-        href: "/bookings",
-        cta: "Find a time",
-      };
+      if (courseToResume) {
+        nextAction = {
+          eyebrow: "Continue learning",
+          title: courseToResume.lessonTitle,
+          description: `Resume ${courseToResume.title} from your next incomplete lesson.`,
+          href: courseToResume.href,
+          cta: "Open lesson",
+        };
+      } else if (upcomingBooking) {
+        nextAction = {
+          eyebrow: "Next session",
+          title: upcomingBooking.service?.title ?? "Upcoming session",
+          description: `${new Date(upcomingBooking.startTime).toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })} with ${upcomingBooking.coach?.name || "your coach"}. Add notes or calendar details from bookings.`,
+          href: "/bookings",
+          cta: "View session",
+        };
+      } else if (projectCount === 0) {
+        nextAction = {
+          eyebrow: "Start your workspace",
+          title: "Create your first pitch project",
+          description: "Give the team one place to track your brief, deliverables, and feedback.",
+          href: "/projects",
+          cta: "Create project",
+        };
+      } else {
+        nextAction = {
+          eyebrow: "Keep momentum",
+          title: "Book your next strategy session",
+          description: "Pair your self-paced work with a focused coach review.",
+          href: "/bookings",
+          cta: "Find a time",
+        };
+      }
+    } catch (err) {
+      console.error("[DASHBOARD] Failed to fetch client data:", err);
     }
   }
 
