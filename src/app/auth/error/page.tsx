@@ -30,9 +30,9 @@ export default async function AuthErrorPage({
         "The sign-in process was interrupted or timed out. Please try again.",
     },
     AccessDenied: {
-      title: "Access denied",
+      title: "Email not verified",
       description:
-        "You do not have permission to sign in. If you believe this is a mistake, contact support.",
+        "Please verify your email before signing in. Check your inbox for a verification link, or request a new one below.",
     },
   };
 
@@ -40,6 +40,8 @@ export default async function AuthErrorPage({
     title: "Sign-in error",
     description: "An unexpected error occurred. Please try again.",
   };
+
+  const isVerificationIssue = error === "AccessDenied";
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
@@ -69,19 +71,34 @@ export default async function AuthErrorPage({
 
         {/* Actions */}
         <div className="space-y-3">
-          <Link
-            href="/auth/signin"
-            className="flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 h-11"
-          >
-            Try signing in again
-          </Link>
+          {isVerificationIssue && (
+            <Link
+              href="/auth/resend-verification"
+              className="flex w-full items-center justify-center rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 h-11"
+            >
+              Resend verification email
+            </Link>
+          )}
 
           <Link
-            href="/"
-            className="flex w-full items-center justify-center rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted h-11"
+            href="/auth/signin"
+            className={`flex w-full items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium transition-colors h-11 ${
+              isVerificationIssue
+                ? "border border-border bg-background text-foreground hover:bg-muted"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            }`}
           >
-            Back to home
+            {isVerificationIssue ? "Back to sign in" : "Try signing in again"}
           </Link>
+
+          {!isVerificationIssue && (
+            <Link
+              href="/"
+              className="flex w-full items-center justify-center rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-muted h-11"
+            >
+              Back to home
+            </Link>
+          )}
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
@@ -94,3 +111,4 @@ export default async function AuthErrorPage({
     </div>
   );
 }
+

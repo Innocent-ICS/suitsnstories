@@ -9,6 +9,7 @@ import {
 } from "@/lib/email-verification";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import {
+    CsrfError,
     assertSameOriginRequest,
     getServerActionSecurityContext,
 } from "@/lib/security/request";
@@ -30,92 +31,116 @@ const ResendVerificationSchema = z.object({
 });
 
 export const register = async (values: z.infer<typeof RegisterSchema>) => {
-    const requestContext = await getServerActionSecurityContext();
-    assertSameOriginRequest(requestContext);
+    try {
+        const requestContext = await getServerActionSecurityContext();
+        assertSameOriginRequest(requestContext);
 
-    const validatedFields = RegisterSchema.safeParse(values);
+        const validatedFields = RegisterSchema.safeParse(values);
 
-    if (!validatedFields.success) {
-        const messages = validatedFields.error.issues.map((i) => i.message);
-        return { error: messages.join(". ") };
+        if (!validatedFields.success) {
+            const messages = validatedFields.error.issues.map((i) => i.message);
+            return { error: messages.join(". ") };
+        }
+
+        const { email, password, name } = validatedFields.data;
+        const rateLimit = await checkRateLimit({
+            scope: "auth-register",
+            identifier: `${requestContext.ip}:${email.toLowerCase()}`,
+            limit: 5,
+            windowMs: 60 * 60 * 1000,
+        });
+
+        if (!rateLimit.allowed) {
+            return { error: "Too many signup attempts. Please try again shortly." };
+        }
+
+        const existingUser = await db.user.findFirst({
+            where: {
+                email: { equals: email, mode: "insensitive" },
+            },
+        });
+
+        if (existingUser) {
+            return { error: "Email already in use!" };
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await db.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                emailVerified: true,
+            },
+        });
+
+        // Try sending verification email — don't let failure block account creation
+        try {
+            const verificationResult = await sendVerificationEmailForUser(user);
+
+            if (!verificationResult.success) {
+                return {
+                    success: "Account created, but we could not send the verification email. Use the resend link to try again.",
+                };
+            }
+        } catch (emailError) {
+            console.error("[REGISTER] Verification email error:", emailError);
+            return {
+                success: "Account created! Visit the resend verification page to get your verification link.",
+            };
+        }
+
+        return { success: "Account created. Check your email to verify your account before signing in." };
+    } catch (error) {
+        console.error("[REGISTER]", error);
+        if (error instanceof CsrfError) {
+            return { error: "This request appears to be from an unauthorized source. Please refresh and try again." };
+        }
+        return { error: "Registration failed. Please try again." };
     }
-
-    const { email, password, name } = validatedFields.data;
-    const rateLimit = await checkRateLimit({
-        scope: "auth-register",
-        identifier: `${requestContext.ip}:${email.toLowerCase()}`,
-        limit: 5,
-        windowMs: 60 * 60 * 1000,
-    });
-
-    if (!rateLimit.allowed) {
-        return { error: "Too many signup attempts. Please try again shortly." };
-    }
-
-    const existingUser = await db.user.findFirst({
-        where: {
-            email: { equals: email, mode: "insensitive" },
-        },
-    });
-
-    if (existingUser) {
-        return { error: "Email already in use!" };
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const user = await db.user.create({
-        data: {
-            name,
-            email,
-            password: hashedPassword,
-        },
-        select: {
-            id: true,
-            name: true,
-            email: true,
-            emailVerified: true,
-        },
-    });
-
-    const verificationResult = await sendVerificationEmailForUser(user);
-
-    if (!verificationResult.success) {
-        return {
-            success: "Account created, but we could not send the verification email. Use the resend link to try again.",
-        };
-    }
-
-    return { success: "Account created. Check your email to verify your account before signing in." };
 };
 
 export const resendVerification = async (values: z.infer<typeof ResendVerificationSchema>) => {
-    const requestContext = await getServerActionSecurityContext();
-    assertSameOriginRequest(requestContext);
+    try {
+        const requestContext = await getServerActionSecurityContext();
+        assertSameOriginRequest(requestContext);
 
-    const validatedFields = ResendVerificationSchema.safeParse(values);
+        const validatedFields = ResendVerificationSchema.safeParse(values);
 
-    if (!validatedFields.success) {
-        return { error: "Invalid email address." };
+        if (!validatedFields.success) {
+            return { error: "Invalid email address." };
+        }
+
+        const { email } = validatedFields.data;
+        const rateLimit = await checkRateLimit({
+            scope: "auth-resend-verification",
+            identifier: `${requestContext.ip}:${email}`,
+            limit: 5,
+            windowMs: 60 * 60 * 1000,
+        });
+
+        if (!rateLimit.allowed) {
+            return { error: "Too many verification email requests. Please try again shortly." };
+        }
+
+        const result = await sendVerificationEmailForAddress(email);
+
+        if (!result.success) {
+            return { error: result.error };
+        }
+
+        return { success: result.message };
+    } catch (error) {
+        console.error("[RESEND_VERIFICATION]", error);
+        if (error instanceof CsrfError) {
+            return { error: "This request appears to be from an unauthorized source. Please refresh and try again." };
+        }
+        return { error: "Could not send verification email. Please try again." };
     }
-
-    const { email } = validatedFields.data;
-    const rateLimit = await checkRateLimit({
-        scope: "auth-resend-verification",
-        identifier: `${requestContext.ip}:${email}`,
-        limit: 5,
-        windowMs: 60 * 60 * 1000,
-    });
-
-    if (!rateLimit.allowed) {
-        return { error: "Too many verification email requests. Please try again shortly." };
-    }
-
-    const result = await sendVerificationEmailForAddress(email);
-
-    if (!result.success) {
-        return { error: result.error };
-    }
-
-    return { success: result.message };
 };

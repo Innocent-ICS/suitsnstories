@@ -112,6 +112,11 @@ export default function SignUpPage() {
                     {success && (
                         <div className="text-sm text-emerald-600 text-center bg-emerald-500/10 p-3 rounded">
                             {success}
+                            <div className="mt-2">
+                                <Link href="/auth/resend-verification" className="font-medium text-primary hover:underline">
+                                    Didn&apos;t get the email? Resend
+                                </Link>
+                            </div>
                         </div>
                     )}
 

@@ -31,17 +31,22 @@ export async function sendVerificationEmailForUser(user: VerificationUser) {
   const email = user.email.trim().toLowerCase();
   const expiresAt = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
 
-  await db.$transaction([
-    db.emailVerificationToken.deleteMany({ where: { userId: user.id } }),
-    db.emailVerificationToken.create({
-      data: {
-        userId: user.id,
-        email,
-        tokenHash,
-        expiresAt,
-      },
-    }),
-  ]);
+  try {
+    await db.$transaction([
+      db.emailVerificationToken.deleteMany({ where: { userId: user.id } }),
+      db.emailVerificationToken.create({
+        data: {
+          userId: user.id,
+          email,
+          tokenHash,
+          expiresAt,
+        },
+      }),
+    ]);
+  } catch (dbError) {
+    console.error("[EMAIL_VERIFICATION] Failed to store verification token:", dbError);
+    return { success: false, error: "Could not generate verification token. Please try again." };
+  }
 
   const verifyUrl = `${getAppUrl()}/auth/verify-email?token=${encodeURIComponent(token)}`;
   const template = emailVerificationEmail({
@@ -61,23 +66,28 @@ export async function sendVerificationEmailForAddress(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   const neutralMessage = "If an unverified account exists for that email, a new verification link has been sent.";
 
-  const user = await db.user.findFirst({
-    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
-    select: { id: true, email: true, name: true, emailVerified: true },
-  });
+  try {
+    const user = await db.user.findFirst({
+      where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+      select: { id: true, email: true, name: true, emailVerified: true },
+    });
 
-  if (!user) {
+    if (!user) {
+      return { success: true, message: neutralMessage };
+    }
+
+    if (user.emailVerified) {
+      return { success: true, message: "That email is already verified. You can sign in." };
+    }
+
+    const result = await sendVerificationEmailForUser(user);
+    if (!result.success) return result;
+
     return { success: true, message: neutralMessage };
+  } catch (error) {
+    console.error("[EMAIL_VERIFICATION] sendVerificationEmailForAddress error:", error);
+    return { success: false, error: "Could not process verification request. Please try again." };
   }
-
-  if (user.emailVerified) {
-    return { success: true, message: "That email is already verified. You can sign in." };
-  }
-
-  const result = await sendVerificationEmailForUser(user);
-  if (!result.success) return result;
-
-  return { success: true, message: neutralMessage };
 }
 
 export async function verifyEmailToken(token: string) {
@@ -85,39 +95,45 @@ export async function verifyEmailToken(token: string) {
     return { success: false, error: "Verification link is missing or invalid." };
   }
 
-  const tokenHash = hashEmailVerificationToken(token);
-  const verification = await db.emailVerificationToken.findUnique({
-    where: { tokenHash },
-    select: {
-      userId: true,
-      email: true,
-      expiresAt: true,
-    },
-  });
-
-  if (!verification) {
-    return { success: false, error: "Verification link is invalid or has already been used." };
-  }
-
-  if (verification.expiresAt.getTime() < Date.now()) {
-    await db.emailVerificationToken.deleteMany({ where: { tokenHash } });
-    return { success: false, error: "Verification link has expired. Request a new one to continue." };
-  }
-
-  await db.$transaction([
-    db.user.update({
-      where: { id: verification.userId },
-      data: {
-        email: verification.email,
-        emailVerified: new Date(),
+  try {
+    const tokenHash = hashEmailVerificationToken(token);
+    const verification = await db.emailVerificationToken.findUnique({
+      where: { tokenHash },
+      select: {
+        userId: true,
+        email: true,
+        expiresAt: true,
       },
-    }),
-    db.emailVerificationToken.deleteMany({ where: { userId: verification.userId } }),
-  ]);
+    });
 
-  return { success: true, message: "Email verified. You can sign in now." };
+    if (!verification) {
+      return { success: false, error: "Verification link is invalid or has already been used." };
+    }
+
+    if (verification.expiresAt.getTime() < Date.now()) {
+      await db.emailVerificationToken.deleteMany({ where: { tokenHash } });
+      return { success: false, error: "Verification link has expired. Request a new one to continue." };
+    }
+
+    await db.$transaction([
+      db.user.update({
+        where: { id: verification.userId },
+        data: {
+          email: verification.email,
+          emailVerified: new Date(),
+        },
+      }),
+      db.emailVerificationToken.deleteMany({ where: { userId: verification.userId } }),
+    ]);
+
+    return { success: true, message: "Email verified. You can sign in now." };
+  } catch (error) {
+    console.error("[EMAIL_VERIFICATION] verifyEmailToken error:", error);
+    return { success: false, error: "Could not verify email. Please try again or request a new link." };
+  }
 }
 
 function getAppUrl() {
   return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/+$/, "");
 }
+
