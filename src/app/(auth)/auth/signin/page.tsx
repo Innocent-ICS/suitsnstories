@@ -7,7 +7,8 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { FloatingParticles } from "@/components/ui/floating-particles";
 
 export default function SignInPage() {
     return (
@@ -26,6 +27,7 @@ function SignInForm() {
     const [needsVerification, setNeedsVerification] = useState(false);
     const [loading, setLoading] = useState(false);
     const [googleLoading, setGoogleLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -65,10 +67,12 @@ function SignInForm() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-6 sm:space-y-8">
+        <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8 overflow-hidden">
+            <FloatingParticles />
+            
+            <div className="relative z-10 w-full max-w-md bg-card/60 backdrop-blur-md border border-border/80 rounded-2xl shadow-xl shadow-muted/30 p-6 sm:p-10 space-y-6 sm:space-y-8 animate-in fade-in zoom-in-95 duration-500">
                 <div className="text-center">
-                    <Link href="/" className="text-xl sm:text-2xl font-serif text-primary">
+                    <Link href="/" className="text-xl sm:text-2xl font-serif text-primary hover:opacity-85 transition-opacity">
                         Suits &amp; Stories
                     </Link>
                     <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-bold tracking-tight">
@@ -82,7 +86,7 @@ function SignInForm() {
                 {/* Google Sign In */}
                 <Button
                     variant="outline"
-                    className="w-full h-11 text-sm font-medium"
+                    className="w-full h-11 text-sm font-medium hover:bg-muted/50 transition-colors"
                     onClick={handleGoogleSignIn}
                     disabled={googleLoading}
                 >
@@ -114,43 +118,66 @@ function SignInForm() {
                 {/* Divider */}
                 <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-border" />
+                        <span className="w-full border-t border-border/80" />
                     </div>
                     <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">
+                        <span className="bg-card/10 backdrop-blur-md px-3 py-1 rounded-full border border-border/60 text-[10px] font-semibold text-muted-foreground">
                             Or continue with email
                         </span>
                     </div>
                 </div>
 
                 <form className="space-y-4" onSubmit={handleSubmit}>
-                    <div>
-                        <Label htmlFor="email" className="text-sm sm:text-base">Email address</Label>
-                        <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            autoComplete="email"
-                            required
-                            className="mt-1 h-11"
-                            placeholder="you@example.com"
-                        />
-                    </div>
-                    <div>
-                        <Label htmlFor="password" className="text-sm sm:text-base">Password</Label>
-                        <Input
-                            id="password"
-                            name="password"
-                            type="password"
-                            autoComplete="current-password"
-                            required
-                            className="mt-1 h-11"
-                            placeholder="••••••••"
-                        />
+                    <div className="space-y-4">
+                        <div>
+                            <Label htmlFor="email" className="text-sm font-medium">Email address</Label>
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                autoComplete="email"
+                                required
+                                className="mt-1 h-11 bg-background/50 border-border/60 focus:bg-background transition-all"
+                                placeholder="you@example.com"
+                            />
+                        </div>
+                        <div>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="password" className="text-sm font-medium">Password</Label>
+                                <Link
+                                    href="/auth/forgot-password"
+                                    className="text-xs text-primary hover:underline"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
+                            <div className="relative mt-1">
+                                <Input
+                                    id="password"
+                                    name="password"
+                                    type={showPassword ? "text" : "password"}
+                                    autoComplete="current-password"
+                                    required
+                                    className="h-11 pr-10 bg-background/50 border-border/60 focus:bg-background transition-all"
+                                    placeholder="••••••••"
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 hover:text-foreground transition-colors p-1"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? (
+                                        <EyeSlashIcon className="h-4 w-4" />
+                                    ) : (
+                                        <EyeIcon className="h-4 w-4" />
+                                    )}
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
                     {error && (
-                        <div className="text-sm text-red-500 text-center bg-red-500/10 p-3 rounded">
+                        <div className="text-sm text-red-500 text-center bg-red-500/10 p-3 rounded-lg border border-red-500/20">
                             {error}
                             {needsVerification && (
                                 <div className="mt-2">
@@ -163,21 +190,21 @@ function SignInForm() {
                     )}
 
                     {verified && !error && (
-                        <div className="text-sm text-emerald-600 text-center bg-emerald-500/10 p-3 rounded">
+                        <div className="text-sm text-emerald-600 text-center bg-emerald-500/10 p-3 rounded-lg border border-emerald-500/20">
                             Email verified. You can sign in now.
                         </div>
                     )}
 
                     <Button
                         type="submit"
-                        className="w-full h-11"
+                        className="w-full h-11 hover:scale-[1.01] active:scale-[0.99] transition-transform"
                         disabled={loading}
                     >
                         {loading ? <ArrowPathIcon className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Sign in
                     </Button>
 
-                    <p className="text-center text-sm text-muted-foreground">
+                    <p className="text-center text-sm text-muted-foreground pt-2">
                         Don&apos;t have an account?{" "}
                         <Link href="/auth/signup" className="font-medium text-primary hover:underline">
                             Sign up
@@ -191,17 +218,22 @@ function SignInForm() {
 
 function SignInShell() {
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
-            <div className="w-full max-w-md space-y-6 sm:space-y-8 text-center">
+        <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8 overflow-hidden">
+            <FloatingParticles />
+            <div className="relative z-10 w-full max-w-md bg-card/60 backdrop-blur-md border border-border/80 rounded-2xl shadow-xl shadow-muted/30 p-6 sm:p-10 space-y-6 sm:space-y-8 text-center animate-pulse">
                 <Link href="/" className="text-xl sm:text-2xl font-serif text-primary">
                     Suits &amp; Stories
                 </Link>
-                <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-bold tracking-tight">
-                    Welcome back
-                </h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                    Loading sign in...
-                </p>
+                <div className="space-y-3">
+                    <div className="h-8 bg-muted/40 rounded w-3/4 mx-auto animate-pulse" />
+                    <div className="h-4 bg-muted/40 rounded w-1/2 mx-auto animate-pulse" />
+                </div>
+                <div className="space-y-4 pt-4">
+                    <div className="h-11 bg-muted/40 rounded animate-pulse" />
+                    <div className="h-4 bg-muted/40 rounded w-1/4 mx-auto animate-pulse" />
+                    <div className="h-11 bg-muted/40 rounded animate-pulse" />
+                    <div className="h-11 bg-muted/40 rounded animate-pulse" />
+                </div>
             </div>
         </div>
     );
