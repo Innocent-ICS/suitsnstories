@@ -14,51 +14,13 @@ const CRITERIA = [
   { label: "Special character", test: (p: string) => /[^a-zA-Z0-9]/.test(p) },
 ] as const;
 
-function getStrengthColor(score: number) {
-  if (score <= 1) return "bg-rose-500";
-  if (score <= 3) return "bg-amber-500";
-  if (score === 4) return "bg-indigo-500";
-  return "bg-emerald-500";
-}
-
 export function PasswordStrength({ password }: PasswordStrengthProps) {
   if (!password) return null;
 
   const results = CRITERIA.map((c) => c.test(password));
-  const score = results.filter(Boolean).length;
-  const color = getStrengthColor(score);
 
   return (
-    <div className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-2 duration-300">
-      {/* Strength Header & Bars */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground/80">
-            Password Security
-          </span>
-        </div>
-        <div className="flex gap-1.5 h-1.5 items-center">
-          {Array.from({ length: 5 }, (_, i) => {
-            const isActive = i < score;
-            return (
-              <div
-                key={i}
-                className="h-1 flex-1 bg-muted/40 rounded-full overflow-hidden relative"
-              >
-                {isActive && (
-                  <motion.div
-                    className={`absolute inset-0 rounded-full ${color}`}
-                    initial={{ width: "0%" }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+    <div className="pt-1 animate-in fade-in slide-in-from-top-2 duration-300">
       {/* Criteria Checklist */}
       <ul className="grid gap-2 border border-border/40 rounded-xl p-3 bg-muted/10 backdrop-blur-sm">
         {CRITERIA.map((criterion, i) => {
