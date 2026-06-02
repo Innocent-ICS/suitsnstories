@@ -14,41 +14,11 @@ const CRITERIA = [
   { label: "Special character", test: (p: string) => /[^a-zA-Z0-9]/.test(p) },
 ] as const;
 
-function getStrengthMeta(score: number) {
-  if (score <= 1) {
-    return {
-      label: "Weak",
-      color: "bg-rose-500",
-      text: "text-rose-500",
-      bgLight: "bg-rose-500/10",
-      border: "border-rose-500/20",
-    };
-  }
-  if (score <= 3) {
-    return {
-      label: "Fair",
-      color: "bg-amber-500",
-      text: "text-amber-500",
-      bgLight: "bg-amber-500/10",
-      border: "border-amber-500/20",
-    };
-  }
-  if (score === 4) {
-    return {
-      label: "Good",
-      color: "bg-indigo-500",
-      text: "text-indigo-500",
-      bgLight: "bg-indigo-500/10",
-      border: "border-indigo-500/20",
-    };
-  }
-  return {
-    label: "Strong",
-    color: "bg-emerald-500",
-    text: "text-emerald-500",
-    bgLight: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-  };
+function getStrengthColor(score: number) {
+  if (score <= 1) return "bg-rose-500";
+  if (score <= 3) return "bg-amber-500";
+  if (score === 4) return "bg-indigo-500";
+  return "bg-emerald-500";
 }
 
 export function PasswordStrength({ password }: PasswordStrengthProps) {
@@ -56,7 +26,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
   const results = CRITERIA.map((c) => c.test(password));
   const score = results.filter(Boolean).length;
-  const meta = getStrengthMeta(score);
+  const color = getStrengthColor(score);
 
   return (
     <div className="space-y-4 pt-1 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -65,11 +35,6 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold tracking-wider uppercase text-muted-foreground/80">
             Password Security
-          </span>
-          <span
-            className={`text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full border transition-all duration-300 ${meta.text} ${meta.bgLight} ${meta.border}`}
-          >
-            {meta.label}
           </span>
         </div>
         <div className="flex gap-1.5 h-1.5 items-center">
@@ -82,7 +47,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
               >
                 {isActive && (
                   <motion.div
-                    className={`absolute inset-0 rounded-full ${meta.color}`}
+                    className={`absolute inset-0 rounded-full ${color}`}
                     initial={{ width: "0%" }}
                     animate={{ width: "100%" }}
                     transition={{ duration: 0.25, ease: "easeOut" }}
