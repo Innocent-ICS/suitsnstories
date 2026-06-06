@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { RoleChanger } from "./role-changer";
+import { DeleteUserButton } from "./delete-user-button";
 
 export default async function AdminClientsPage() {
   const now = new Date();
@@ -116,12 +117,13 @@ export default async function AdminClientsPage() {
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Next Touch</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Health</th>
                 <th className="text-left px-4 py-3 font-medium text-muted-foreground">Joined</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                     No users yet.
                   </td>
                 </tr>
@@ -160,6 +162,13 @@ export default async function AdminClientsPage() {
                         day: "numeric",
                         year: "numeric",
                       })}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <DeleteUserButton
+                        userId={user.id}
+                        userName={user.name}
+                        userEmail={user.email}
+                      />
                     </td>
                   </tr>
                 ))

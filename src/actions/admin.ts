@@ -42,6 +42,57 @@ export async function updateInquiryStatus(
   }
 }
 
+export async function deleteUser(
+  userId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { success: false, error: "Not authenticated" };
+    }
+
+    // Verify admin role
+    const admin = await db.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+
+    if (admin?.role !== "ADMIN") {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Prevent self-deletion
+    if (userId === session.user.id) {
+      return { success: false, error: "You cannot delete your own account" };
+    }
+
+    // Verify target user exists
+    const targetUser = await db.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true },
+    });
+
+    if (!targetUser) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Delete user — all related records cascade via schema rules
+    await db.user.delete({
+      where: { id: userId },
+    });
+
+    console.log(
+      `[ADMIN] User deleted by ${session.user.id}: ${targetUser.email} (${targetUser.name})`
+    );
+
+    revalidatePath("/clients");
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    return { success: false, error: "Failed to delete user" };
+  }
+}
+
 export async function updateUserRole(
   userId: string,
   role: string
