@@ -4,8 +4,12 @@ export function sanitizePerceptoscopeReport(value: unknown) {
   if (!value || typeof value !== "object") return value;
   const report = { ...(value as Record<string, unknown>) };
 
+  // Remove internal/operational fields that should never reach the client
   delete report.guardrails;
   delete report.internalGuardrails;
+  delete report.provider;
+  delete report.model;
+  delete report.generatedAt;
 
   if (report.agentSummaries && typeof report.agentSummaries === "object") {
     report.agentSummaries = Object.fromEntries(
@@ -20,8 +24,11 @@ export function sanitizePerceptoscopeReport(value: unknown) {
 
 export function publicPerceptoscopeError(status: string, error?: string | null) {
   if (status !== "FAILED") return null;
-  if (error && /engine is not configured|File too large|Unsupported file|empty/i.test(error)) return error;
-  return "The diagnosis could not be completed. Please try again with the alternate model route or a lighter deck export.";
+  if (error && /engine is not configured/i.test(error)) {
+    return "The diagnosis engine is not configured. Please contact support.";
+  }
+  if (error && /File too large|Unsupported file|empty/i.test(error)) return error;
+  return "The diagnosis could not be completed. Please try again with a lighter deck export.";
 }
 
 export function sanitizeAgentRuns<

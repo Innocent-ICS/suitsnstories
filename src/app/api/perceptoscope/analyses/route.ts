@@ -57,7 +57,6 @@ export async function POST(req: NextRequest) {
     let title: string;
     let founderContext: string;
     let projectId: string | null;
-    let preferredProvider: string | null;
     let storagePath: string | null = null;
 
     if (isFormData) {
@@ -72,7 +71,6 @@ export async function POST(req: NextRequest) {
       title = safeJsonText(String(formData.get("title") || ""), "Pitch diagnosis").slice(0, 160) || "Pitch diagnosis";
       founderContext = safeJsonText(String(formData.get("founderContext") || ""), "");
       projectId = safeJsonText(String(formData.get("projectId") || ""), "") || null;
-      preferredProvider = safeJsonText(String(formData.get("provider") || ""), "") || null;
     } else {
       // --- Storage upload path (JSON) ---
       const body = (await req.json()) as {
@@ -83,13 +81,11 @@ export async function POST(req: NextRequest) {
         title?: string;
         founderContext?: string;
         projectId?: string;
-        provider?: string;
       };
 
       title = safeJsonText(body.title, "Pitch diagnosis").slice(0, 160) || "Pitch diagnosis";
       founderContext = safeJsonText(body.founderContext, "");
       projectId = safeJsonText(body.projectId, "") || null;
-      preferredProvider = safeJsonText(body.provider, "") || null;
 
       if (!body.storagePath || !body.fileName || !body.fileSize) {
         return NextResponse.json({ error: "storagePath, fileName, and fileSize are required." }, { status: 400 });
@@ -156,7 +152,7 @@ export async function POST(req: NextRequest) {
           userId,
           file: uploadedFile,
           founderContext,
-          preferredProvider,
+          preferredProvider: null,
         });
       } finally {
         if (capturedStoragePath) {

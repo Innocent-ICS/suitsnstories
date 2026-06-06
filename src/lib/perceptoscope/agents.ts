@@ -575,7 +575,7 @@ function buildFallbackReport(
     score,
     riskLevel: score >= 75 ? "low" : score >= 50 ? "medium" : "high",
     summary:
-      "The diagnosis completed with fallback synthesis from the extractor, specialist findings, and local deck evidence. Some model coverage was partial, so the report prioritizes concrete evidence that was available.",
+      "The diagnosis completed with fallback synthesis from the extractor, specialist findings, and local deck evidence. Some automated coverage was partial, so the report prioritizes concrete evidence that was available.",
     strengths,
     attentionAreas,
     nextSteps: nextSteps.length
@@ -591,7 +591,7 @@ function buildFallbackReport(
       privacyNotes: [
         "Uploaded files are processed in memory and are not stored as raw deck files.",
         "Deck-provided URLs are not fetched by the Perceptoscope.",
-        "Fallback synthesis was used because the final model output was unavailable or invalid.",
+        "Fallback synthesis was used because the final automated output was unavailable or invalid.",
       ],
     },
     generatedAt: new Date().toISOString(),
@@ -658,7 +658,7 @@ function inferStrengths(deckInput: DeckInput) {
   const strengths: string[] = [];
   if (deckInput.extractedText.trim()) strengths.push("The deck contains extractable text for narrative review.");
   if (deckInput.images.length > 0) strengths.push("The analysis retained lightweight visual samples for design review.");
-  if (deckInput.pdfDataUrl) strengths.push("A compressed PDF artifact was available for provider-side OCR.");
+  if (deckInput.pdfDataUrl) strengths.push("A compressed PDF artifact was available for document review.");
   return strengths;
 }
 
@@ -695,7 +695,7 @@ function parseAgentResult(value: unknown): AgentResult {
     summary: "This specialist pass produced partial output that could not be fully structured.",
     findings: [],
     strengths: [],
-    nextSteps: ["Run the diagnosis again or try the alternate model route."],
+    nextSteps: ["Run the diagnosis again with a lighter deck export."],
     risks: [],
   };
 }
@@ -728,12 +728,12 @@ function removeGuardrailSummary(summaries: Record<string, string>) {
 
 function publicDiagnosisError(error: unknown) {
   if (error instanceof Error && /requires GROQ_KEY|OPEN_ROUTER_KEY|not configured/i.test(error.message)) {
-    return "The diagnosis engine is not configured. Add the model provider API key and try again.";
+    return "The diagnosis engine is not configured. Please contact support.";
   }
   if (error instanceof Error && /too large|File too large|Unsupported file|empty/i.test(error.message)) {
     return error.message.slice(0, 220);
   }
-  return "The diagnosis could not be completed. Please try again with the alternate model route or a lighter deck export.";
+  return "The diagnosis could not be completed. Please try again with a lighter deck export.";
 }
 
 export const __perceptoscopeTest = {

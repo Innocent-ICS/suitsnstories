@@ -25,12 +25,14 @@ type MobileNavItem = {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  tooltip?: string;
 };
 
 const defaultCenterItem: MobileNavItem = {
   label: "Percept",
   href: "/diagnostic",
   icon: StethoscopeIcon,
+  tooltip: "AI-powered pitch deck analysis",
 };
 
 const baseTabs = (centerItem: MobileNavItem): MobileNavItem[] => [
@@ -42,7 +44,7 @@ const baseTabs = (centerItem: MobileNavItem): MobileNavItem[] => [
 ];
 
 const adminManageItems: MobileNavItem[] = [
-  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon },
+  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon, tooltip: "AI-powered pitch deck analysis" },
   { label: "Programs", href: "/programs", icon: RocketLaunchIcon },
   { label: "Content", href: "/content", icon: DocumentTextIcon },
   { label: "Services", href: "/services-admin", icon: CalendarIcon },
@@ -53,7 +55,7 @@ const adminManageItems: MobileNavItem[] = [
 ];
 
 const managerManageItems: MobileNavItem[] = [
-  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon },
+  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon, tooltip: "AI-powered pitch deck analysis" },
   { label: "Programs", href: "/programs", icon: RocketLaunchIcon },
 ];
 
@@ -80,7 +82,7 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
       )}
 
       {hasManage && manageOpen && (
-        <div className="fixed inset-x-4 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] z-50 rounded-3xl border border-border bg-card/95 p-4 shadow-2xl shadow-black/15 backdrop-blur-xl md:hidden">
+        <div className="fixed inset-x-4 bottom-[calc(5.75rem+max(0.35rem,env(safe-area-inset-bottom)))] z-50 rounded-3xl border border-border bg-card/95 p-4 shadow-2xl shadow-black/15 backdrop-blur-xl md:hidden">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
@@ -97,6 +99,7 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  title={item.tooltip}
                   onClick={() => setManageOpen(false)}
                   className={cn(
                     "flex min-h-12 items-center gap-3 rounded-2xl border px-3 text-sm font-medium transition",
@@ -114,7 +117,7 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
         </div>
       )}
 
-      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-card/90 px-3 pb-[calc(0.55rem+env(safe-area-inset-bottom))] pt-2 shadow-[0_-16px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-border/80 bg-card/90 px-3 pb-[max(0.55rem,calc(0.55rem+env(safe-area-inset-bottom)))] pt-2 shadow-[0_-16px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl md:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 items-end gap-1">
           {tabs.map((item, index) => {
             const isCenter = index === 2;
@@ -148,6 +151,7 @@ export function MobileBottomNav({ role }: { role: UserRole }) {
               <Link
                 key={item.href}
                 href={item.href}
+                title={item.tooltip}
                 className={cn(
                   "flex min-h-[3.45rem] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[0.68rem] font-semibold transition",
                   active ? "text-primary" : "text-muted-foreground"

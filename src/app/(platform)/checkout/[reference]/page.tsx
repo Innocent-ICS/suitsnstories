@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { BookingDateDisplay, BookingTimeDisplay } from "../../bookings/booking-time-display";
 import {
   CalendarIcon,
   CheckCircleIcon,
@@ -116,22 +117,17 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
               <>
                 <Detail
                   label="Date"
-                  value={new Date(meta.startTime).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  value={<BookingDateDisplay dateIso={meta.startTime} />}
                 />
                 <Detail
                   label="Time"
-                  value={`${new Date(meta.startTime).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })} - ${new Date(meta.endTime).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}`}
+                  value={
+                    <BookingTimeDisplay
+                      startTime={meta.startTime}
+                      endTime={meta.endTime}
+                      variant="compact"
+                    />
+                  }
                 />
               </>
             )}
@@ -186,7 +182,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-background/60 p-4">
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

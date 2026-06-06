@@ -205,9 +205,45 @@
     }
   }
 
+  /* -------------------------------------------------------------------
+     PWA Standalone Mode — Safe-area handling for iOS Dynamic Island,
+     notch, home indicator, and all modern mobile device insets.
+     Covers iPhone 14 Pro / 15 / 16 and future devices.
+  ------------------------------------------------------------------- */
+
+  /* Safe-area CSS custom properties for reuse */
+  :root {
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
+  }
+
   @media (display-mode: standalone) {
     body {
       background: var(--background);
+      /* Prevent overscroll bounce in PWA mode */
+      overflow: hidden;
+    }
+
+    /* The root layout container needs to be the scroll container */
+    body > div:first-child {
+      height: 100dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  /* iOS standalone — ensure the html element fills the full viewport
+     when viewport-fit: cover is active. This is critical for the
+     Dynamic Island area on iPhone 14 Pro / 15 / 16 series. */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    @media (display-mode: standalone) {
+      html {
+        padding-left: var(--sal);
+        padding-right: var(--sar);
+      }
     }
   }
 }
+

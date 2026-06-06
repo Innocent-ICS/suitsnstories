@@ -44,8 +44,6 @@ export async function GET(_req: Request, { params }: Props) {
     report: sanitizePerceptoscopeReport(analysis.report),
     error: publicPerceptoscopeError(analysis.status, analysis.error),
     fileName: analysis.fileName,
-    provider: analysis.provider,
-    model: analysis.model,
     createdAt: analysis.createdAt.toISOString(),
     completedAt: analysis.completedAt?.toISOString() || null,
     agentRuns: sanitizeAgentRuns(analysis.agentRuns),

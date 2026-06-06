@@ -29,14 +29,21 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=success`);
     } else {
       return NextResponse.redirect(
-        `${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=failed&reason=${encodeURIComponent(result.error || "unknown")}`
+        `${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=failed&reason=${encodeURIComponent(publicPaymentReason(result.error))}`
       );
     }
   } catch (error: unknown) {
     console.error("Payment verify error:", error);
-    const message = error instanceof Error ? error.message : "unknown";
     return NextResponse.redirect(
-      `${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=error&reason=${encodeURIComponent(message)}`
+      `${baseUrl}/checkout/confirmation?ref=${encodeURIComponent(ref)}&status=error&reason=${encodeURIComponent(publicPaymentReason())}`
     );
   }
+}
+
+function publicPaymentReason(error?: string | null) {
+  if (error && /not successful|failed|declined/i.test(error) && !/prisma|database|fatal|querying/i.test(error)) {
+    return "Payment was not completed by the provider.";
+  }
+
+  return "We could not confirm the payment right now. Please try again in a few minutes.";
 }

@@ -27,8 +27,6 @@ export default async function PlatformDiagnosticPage() {
         report: true,
         error: true,
         fileName: true,
-        provider: true,
-        model: true,
         createdAt: true,
         completedAt: true,
         agentRuns: {

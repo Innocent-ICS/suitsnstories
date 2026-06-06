@@ -4,10 +4,11 @@ import Link from "next/link";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { BookingActions } from "./booking-actions";
 import { CalendarButtons } from "./calendar-buttons";
+import { BookingTimeDisplay, DateTileClient, BookingDateCompact } from "./booking-time-display";
 import { isBookableStaffRole } from "@/lib/booking-roles";
 import {
-  ClockIcon,
   CalendarIcon,
+  ClockIcon,
   UserIcon,
 } from "@heroicons/react/24/outline";
 
@@ -77,7 +78,7 @@ export default async function BookingsPage() {
               >
                 <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-stretch lg:justify-between">
                   <div className="flex min-w-0 flex-1 flex-col gap-4 sm:flex-row">
-                    <DateTile date={booking.startTime} />
+                    <DateTileClient dateIso={booking.startTime.toISOString()} />
 
                     <div className="min-w-0 flex-1 space-y-3">
                       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -86,18 +87,10 @@ export default async function BookingsPage() {
                             {booking.service.title}
                           </h3>
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
-                              <ClockIcon className="h-4 w-4" />
-                              {new Date(booking.startTime).toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
-                              {" - "}
-                              {new Date(booking.endTime).toLocaleTimeString("en-US", {
-                                hour: "numeric",
-                                minute: "2-digit",
-                              })}
-                            </span>
+                            <BookingTimeDisplay
+                              startTime={booking.startTime.toISOString()}
+                              endTime={booking.endTime.toISOString()}
+                            />
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1">
                               <UserIcon className="h-4 w-4" />
                               {isSessionLead
@@ -230,11 +223,7 @@ export default async function BookingsPage() {
                   <div>
                     <p className="text-sm font-medium text-foreground">{booking.service.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(booking.startTime).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        year: "numeric",
-                      })}
+                      <BookingDateCompact dateIso={booking.startTime.toISOString()} />
                       {" · "}
                       {isSessionLead ? booking.client.name : `with ${booking.coach.name}`}
                     </p>
@@ -246,22 +235,6 @@ export default async function BookingsPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function DateTile({ date }: { date: Date }) {
-  return (
-    <div className="flex h-24 w-full shrink-0 items-center justify-between rounded-xl border border-primary/15 bg-primary/5 px-4 sm:w-24 sm:flex-col sm:justify-center sm:px-3">
-      <span className="text-xs font-medium uppercase tracking-wider text-primary">
-        {new Date(date).toLocaleDateString("en-US", { weekday: "short" })}
-      </span>
-      <span className="font-serif text-3xl text-foreground">
-        {new Date(date).toLocaleDateString("en-US", { day: "2-digit" })}
-      </span>
-      <span className="text-xs text-muted-foreground">
-        {new Date(date).toLocaleDateString("en-US", { month: "short" })}
-      </span>
     </div>
   );
 }

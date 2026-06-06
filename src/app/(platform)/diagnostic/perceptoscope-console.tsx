@@ -32,8 +32,6 @@ interface AnalysisListItem {
   report: unknown;
   error: string | null;
   fileName: string;
-  provider: string | null;
-  model: string | null;
   createdAt: string;
   completedAt: string | null;
   agentRuns: AgentRun[];
@@ -155,8 +153,6 @@ export function PerceptoscopeConsole({
         report: null,
         error: null,
         fileName: file.name,
-        provider: null,
-        model: null,
         createdAt: new Date().toISOString(),
         completedAt: null,
         agentRuns: [],
@@ -216,7 +212,6 @@ export function PerceptoscopeConsole({
         title,
         founderContext: String(formData.get("founderContext") || ""),
         projectId: String(formData.get("projectId") || ""),
-        provider: String(formData.get("provider") || ""),
       }),
     });
 
@@ -235,8 +230,8 @@ export function PerceptoscopeConsole({
           <h1 className="text-[26px] font-medium text-foreground" style={{ fontFamily: "var(--font-serif)" }}>
             Pitch Diagnosis
           </h1>
-          <p className="mt-1 max-w-2xl text-[13px]" style={{ color: "var(--muted-foreground)", opacity: 0.7 }}>
-            Analyze story clarity, investor readiness, visual communication, and evidence gaps.
+          <p className="mt-1 max-w-2xl text-[13px]" style={{ color: "var(--muted-foreground)", opacity: 0.85 }}>
+            Upload a pitch deck and let our AI agents analyze story clarity, investor readiness, visual communication, and evidence gaps.
           </p>
         </div>
         {activeAnalysis?.status === "COMPLETED" && (
@@ -300,27 +295,6 @@ export function PerceptoscopeConsole({
                 </select>
               </div>
 
-              {/* Principle VI: Affordances Made Visible — pill badges instead of dropdown */}
-              <div>
-                <label className="text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
-                  Model route
-                </label>
-                <select
-                  name="provider"
-                  className="mt-1.5 w-full rounded-md px-3 py-2 text-[13px] outline-none"
-                  style={{
-                    border: "0.5px solid var(--border-subtle)",
-                    backgroundColor: "var(--surface-overlay)",
-                    color: "var(--foreground)",
-                  }}
-                  defaultValue=""
-                >
-                  <option value="">Auto</option>
-                  <option value="OPENROUTER">OpenRouter Nemotron VL</option>
-                  <option value="GROQ">Groq Llama 4</option>
-                </select>
-              </div>
-
               {/* Principle VI: File zone — dashed border + icon = affordance chorus */}
               <div>
                 <label className="text-xs font-medium" style={{ color: "var(--foreground)", opacity: 0.5 }}>
@@ -339,7 +313,7 @@ export function PerceptoscopeConsole({
                   }}
                 />
                 <p className="mt-1.5 text-[11px]" style={{ color: "var(--muted-foreground)", opacity: 0.5 }}>
-                  Files up to 20MB are compressed into a lean analysis artifact before OCR/model review.
+                  Files up to 20MB are compressed into a lean analysis artifact before review.
                 </p>
               </div>
 
@@ -454,11 +428,6 @@ function ReportView({ analysis, report }: { analysis: AnalysisListItem; report: 
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <StatusBadge status={analysis.status} />
               <RiskBadge risk={report.riskLevel} />
-              {analysis.provider && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-                  {analysis.provider.toLowerCase()}
-                </span>
-              )}
             </div>
             <h2 className="text-2xl font-serif text-foreground">{analysis.title}</h2>
             <p className="mt-2 text-sm text-muted-foreground">{report.summary}</p>

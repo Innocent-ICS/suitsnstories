@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,27 @@ import {
   UserPlusIcon,
   UsersIcon,
   LinkIcon,
+  ArrowUpTrayIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+
+const DELIVERABLE_MAX_FILE_SIZE = 20 * 1024 * 1024;
+const DELIVERABLE_ALLOWED_EXTENSIONS = new Set([
+  "pdf",
+  "pptx",
+  "docx",
+  "ppt",
+  "doc",
+  "png",
+  "jpg",
+  "jpeg",
+  "webp",
+  "gif",
+  "mp4",
+  "mov",
+  "txt",
+  "md",
+]);
 
 interface ProjectDetailProps {
   project: {
@@ -106,6 +126,11 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [inviteMessage, setInviteMessage] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
+  const [deliverableFile, setDeliverableFile] = useState<File | null>(null);
+  const [deliverableUploading, setDeliverableUploading] = useState(false);
+  const [deliverableError, setDeliverableError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isClient = project.client.id === currentUserId;
   const isCoach = project.coach?.id === currentUserId;
@@ -146,11 +171,90 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
 
   async function handleAddDeliverable(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setDeliverableError(null);
     const form = e.currentTarget;
     const fd = new FormData(form);
-    await addDeliverable(project.id, fd.get("title") as string);
-    form.reset();
-    router.refresh();
+    const title = fd.get("title") as string;
+
+    if (!title.trim() && !deliverableFile) {
+      setDeliverableError("Please enter a name or attach a file.");
+      return;
+    }
+
+    setDeliverableUploading(true);
+    try {
+      let fileUrl: string | undefined;
+      let fileType: string | undefined;
+      let fileSize: number | undefined;
+
+      if (deliverableFile) {
+        const uploadData = new FormData();
+        uploadData.append("file", deliverableFile);
+        uploadData.append("projectId", project.id);
+        const res = await fetch("/api/deliverables/upload", {
+          method: "POST",
+          body: uploadData,
+        });
+        if (!res.ok) {
+          const payload = await res.json().catch(() => null) as { error?: string } | null;
+          setDeliverableError(payload?.error || "File upload failed.");
+          return;
+        }
+        const result = await res.json() as { url: string; fileType: string; fileSize: number };
+        fileUrl = result.url;
+        fileType = result.fileType;
+        fileSize = result.fileSize;
+      }
+
+      const deliverableTitle = title.trim() || deliverableFile?.name || "Untitled";
+      await addDeliverable(project.id, deliverableTitle, fileUrl, fileType, fileSize);
+      form.reset();
+      setDeliverableFile(null);
+      router.refresh();
+    } catch {
+      setDeliverableError("Something went wrong. Please try again.");
+    } finally {
+      setDeliverableUploading(false);
+    }
+  }
+
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) setSelectedDeliverableFile(file);
+  }
+
+  function setSelectedDeliverableFile(file: File) {
+    setDeliverableError(null);
+
+    if (file.size > DELIVERABLE_MAX_FILE_SIZE) {
+      setDeliverableFile(null);
+      setDeliverableError("File too large. Please choose a file under 20MB.");
+      return;
+    }
+
+    const extension = file.name.split(".").pop()?.toLowerCase() || "";
+    if (!DELIVERABLE_ALLOWED_EXTENSIONS.has(extension)) {
+      setDeliverableFile(null);
+      setDeliverableError("Unsupported file type. Please attach a PDF, deck, document, image, video, or text file.");
+      return;
+    }
+
+    setDeliverableFile(file);
   }
 
   async function handleSaveFeedback(feedback: string) {
@@ -295,7 +399,7 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
                         <p className="text-xs text-muted-foreground">
                           v{d.version} · {new Date(d.createdAt).toLocaleDateString()}
                           {d.fileUrl && (
-                            <> · <a href={d.fileUrl} target="_blank" className="text-primary hover:underline">Download</a></>
+                            <> · <a href={`/api/deliverables/${d.id}/download`} target="_blank" rel="noreferrer" className="text-primary hover:underline">Download</a></>
                           )}
                         </p>
                       </div>
@@ -319,14 +423,74 @@ export function ProjectDetail({ project, currentUserId, userRole, coaches }: Pro
 
             {/* Add deliverable (client only) */}
             {canAddDeliverable && (
-              <form onSubmit={handleAddDeliverable} className="flex flex-col gap-2 sm:flex-row">
-                <input
-                  name="title"
-                  required
-                  placeholder="Deliverable name..."
-                  className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                />
-                <Button type="submit" size="sm">Add</Button>
+              <form onSubmit={handleAddDeliverable} className="space-y-3">
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    name="title"
+                    aria-label="Type a note or attach a file"
+                    placeholder="Type a note or attach a file"
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <Button type="submit" size="sm" disabled={deliverableUploading}>
+                    {deliverableUploading ? "Uploading..." : "Add"}
+                  </Button>
+                </div>
+
+                {/* Drag-and-drop / browse file zone */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`relative cursor-pointer rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
+                    isDragging
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-primary/40 hover:bg-muted/30"
+                  }`}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.pptx,.docx,.ppt,.doc,.png,.jpg,.jpeg,.webp,.gif,.mp4,.mov,.txt,.md"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setSelectedDeliverableFile(file);
+                      e.target.value = "";
+                    }}
+                  />
+                  <ArrowUpTrayIcon className="mx-auto h-6 w-6 text-muted-foreground" />
+                  <p className="mt-1.5 text-sm text-muted-foreground">
+                    Drag & drop a file or <span className="font-medium text-primary">browse</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground/60">
+                    PDF, PPTX, DOCX, images, videos — up to 20MB
+                  </p>
+                </div>
+
+                {/* Selected file chip */}
+                {deliverableFile && (
+                  <div className="flex items-center gap-2 rounded-md border border-border bg-muted/20 px-3 py-2 text-sm">
+                    <PaperClipIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="truncate flex-1 text-foreground">{deliverableFile.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {(deliverableFile.size / 1024 / 1024).toFixed(1)} MB
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setDeliverableFile(null); }}
+                      className="rounded p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <XMarkIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
+
+                {deliverableError && (
+                  <p className="text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md">
+                    {deliverableError}
+                  </p>
+                )}
               </form>
             )}
           </section>

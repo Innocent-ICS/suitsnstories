@@ -64,7 +64,7 @@ export default async function PerceptoscopeSecurityPage() {
                       {analysis.fileName} - {analysis.user.name || analysis.user.email || "Unknown user"}
                     </p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {analysis.createdAt.toLocaleString()} - {analysis.provider?.toLowerCase() || "no provider"}
+                      {analysis.createdAt.toLocaleString()}
                     </p>
                   </div>
                   {analysis.score !== null && (

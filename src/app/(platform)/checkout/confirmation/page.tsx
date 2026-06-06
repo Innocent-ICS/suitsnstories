@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarButtons } from "../../bookings/calendar-buttons";
+import { BookingDateDisplay, BookingTimeDisplay } from "../../bookings/booking-time-display";
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -63,6 +64,7 @@ export default async function CheckoutConfirmationPage({
       ? "Your coaching session is booked and ready."
       : "Your course access is ready."
     : reason || "We could not complete this payment.";
+  const safeDescription = success ? description : publicPaymentDescription(reason);
   const primaryHref = success
     ? isProgram
       ? "/programs"
@@ -95,7 +97,7 @@ export default async function CheckoutConfirmationPage({
           )}
         </div>
         <h1 className="mt-4 text-3xl font-serif text-foreground">{title}</h1>
-        <p className="mx-auto mt-2 max-w-xl text-muted-foreground">{description}</p>
+        <p className="mx-auto mt-2 max-w-xl text-muted-foreground">{safeDescription}</p>
       </section>
 
       {payment && meta && (
@@ -128,22 +130,17 @@ export default async function CheckoutConfirmationPage({
               <div className="mb-3 grid gap-3 sm:grid-cols-2">
                 <Detail
                   label="Date"
-                  value={new Date(meta.startTime).toLocaleDateString("en-US", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  value={<BookingDateDisplay dateIso={meta.startTime} />}
                 />
                 <Detail
                   label="Time"
-                  value={`${new Date(meta.startTime).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })} - ${new Date(meta.endTime).toLocaleTimeString("en-US", {
-                    hour: "numeric",
-                    minute: "2-digit",
-                  })}`}
+                  value={
+                    <BookingTimeDisplay
+                      startTime={meta.startTime}
+                      endTime={meta.endTime}
+                      variant="compact"
+                    />
+                  }
                 />
               </div>
               <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -180,7 +177,7 @@ export default async function CheckoutConfirmationPage({
   );
 }
 
-function Detail({ label, value }: { label: string; value: string }) {
+function Detail({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-border bg-background/60 p-4">
       <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -209,4 +206,12 @@ function formatMoney(amount: number, currency: string) {
     currency,
     maximumFractionDigits: 0,
   }).format(amount / 100);
+}
+
+function publicPaymentDescription(reason?: string) {
+  if (!reason) return "We could not complete this payment.";
+  if (/prisma|database|fatal|querying|connection|max clients|emaxconn/i.test(reason)) {
+    return "We could not confirm the payment right now. Please try again in a few minutes.";
+  }
+  return reason.slice(0, 180);
 }

@@ -45,7 +45,7 @@ export function Topbar({ userName, userEmail, userRole, userImage }: TopbarProps
   };
 
   return (
-    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-card/85 px-3 pt-[env(safe-area-inset-top)] backdrop-blur-xl sm:px-4 md:px-6">
+    <header className="sticky top-0 z-30 flex min-h-14 items-center justify-between border-b border-border bg-card/85 px-3 pt-[max(0.25rem,env(safe-area-inset-top))] backdrop-blur-xl sm:px-4 md:px-6">
       {/* Page title */}
       <h1 className="min-w-0 flex-1 truncate px-1 text-[1.05rem] font-semibold leading-none text-foreground sm:text-lg md:px-0">
         {pageTitle}

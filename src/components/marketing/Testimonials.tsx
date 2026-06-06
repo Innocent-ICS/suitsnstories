@@ -27,6 +27,7 @@ export function Testimonials({ items }: TestimonialsProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const trackRef = useRef<HTMLDivElement>(null);
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
     // We need enough items to scroll smoothly.
     // With 4 items, let's create a buffer.
@@ -176,7 +177,7 @@ export function Testimonials({ items }: TestimonialsProps) {
                                     style={{ width: `${100 / itemsPerPage}%` }}
                                 >
                                     <div className={cn(
-                                        "p-8 rounded-2xl border flex flex-col justify-between h-full bg-card min-h-[320px]",
+                                        "p-8 rounded-2xl border flex flex-col justify-between h-full bg-card min-h-[280px]",
                                         testimonial.featured
                                             ? "border-primary ring-1 ring-primary/20 shadow-md"
                                             : "border-border hover:border-primary/50 transition-colors"
@@ -186,9 +187,32 @@ export function Testimonials({ items }: TestimonialsProps) {
                                                 <StarIcon className="w-6 h-6 text-amber-400" />
                                                 <span className="font-semibold text-lg">{testimonial.stars.toFixed(1)}</span>
                                             </div>
-                                            <p className="text-muted-foreground leading-relaxed mb-8 italic">
+                                            <p className={cn(
+                                                "text-muted-foreground leading-relaxed mb-4 italic",
+                                                !expandedIds.has(testimonial.id) && "line-clamp-3"
+                                            )}>
                                                 &quot;{testimonial.text}&quot;
                                             </p>
+                                            {testimonial.text.length > 150 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setExpandedIds((prev) => {
+                                                            const next = new Set(prev);
+                                                            if (next.has(testimonial.id)) {
+                                                                next.delete(testimonial.id);
+                                                            } else {
+                                                                next.add(testimonial.id);
+                                                            }
+                                                            return next;
+                                                        });
+                                                    }}
+                                                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors mb-4"
+                                                >
+                                                    {expandedIds.has(testimonial.id) ? "Show less" : "Read more"}
+                                                </button>
+                                            )}
                                         </div>
 
                                         <div className="border-t border-border pt-6 flex items-center gap-4">

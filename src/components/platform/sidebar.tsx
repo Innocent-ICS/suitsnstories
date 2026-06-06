@@ -22,6 +22,7 @@ interface NavItem {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  tooltip?: string;
 }
 
 const clientNav: NavItem[] = [
@@ -29,7 +30,7 @@ const clientNav: NavItem[] = [
   { label: "Learn", href: "/learn", icon: AcademicCapIcon },
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
-  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon },
+  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon, tooltip: "AI-powered pitch deck analysis — get scored on story clarity, investor readiness, and visual design" },
   { label: "Recommend", href: "/recommendations", icon: ChatBubbleLeftRightIcon },
 ];
 
@@ -63,7 +64,7 @@ const adminNav: NavItem[] = [
   { label: "Projects", href: "/projects", icon: FolderIcon },
   { label: "Programs", href: "/programs", icon: RocketLaunchIcon },
   { label: "Bookings", href: "/bookings", icon: CalendarIcon },
-  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon },
+  { label: "Perceptoscope", href: "/diagnostic", icon: StethoscopeIcon, tooltip: "AI-powered pitch deck analysis — get scored on story clarity, investor readiness, and visual design" },
   { label: "AI Security", href: "/perceptoscope-security", icon: ShieldCheckIcon },
   { label: "Content", href: "/content", icon: DocumentTextIcon },
   { label: "Services", href: "/services-admin", icon: CalendarIcon },
@@ -145,6 +146,7 @@ export function Sidebar({ role, userName }: SidebarProps) {
               <li key={item.href}>
                 <Link
                   href={item.href}
+                  title={item.tooltip}
                   className="group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium transition-colors"
                   style={{
                     color: isActive

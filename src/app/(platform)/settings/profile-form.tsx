@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -105,12 +105,8 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         </div>
         <div>
           <Label htmlFor="timezone">Timezone</Label>
-          <Input
-            id="timezone"
-            name="timezone"
-            defaultValue={initialData.timezone}
-            className="mt-1.5"
-            placeholder="e.g., Africa/Accra"
+          <TimezoneSelect
+            defaultValue={initialData.timezone || ""}
           />
         </div>
       </div>
@@ -131,5 +127,51 @@ export function ProfileForm({ initialData }: ProfileFormProps) {
         {loading ? "Saving..." : "Save Changes"}
       </Button>
     </form>
+  );
+}
+
+function TimezoneSelect({ defaultValue }: { defaultValue: string }) {
+  const [timezones] = useState<string[]>(() => {
+    try {
+      return Intl.supportedValuesOf("timeZone");
+    } catch {
+      // Fallback for older browsers
+      return [
+        "Africa/Accra", "Africa/Lagos", "Africa/Nairobi", "Africa/Cairo",
+        "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles",
+        "America/Sao_Paulo", "Asia/Kolkata", "Asia/Shanghai", "Asia/Tokyo",
+        "Australia/Sydney", "Europe/London", "Europe/Paris", "Europe/Berlin",
+        "Pacific/Auckland", "UTC",
+      ];
+    }
+  });
+
+  const detected = useMemo(() => {
+    try {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      return "UTC";
+    }
+  }, []);
+
+  const selectedValue = defaultValue || detected || "UTC";
+
+  return (
+    <select
+      id="timezone"
+      name="timezone"
+      defaultValue={selectedValue}
+      className="mt-1.5 flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    >
+      <option value="" disabled>
+        Select your timezone...
+      </option>
+      {timezones.map((tz) => (
+        <option key={tz} value={tz}>
+          {tz.replace(/_/g, " ")}
+          {tz === detected ? " (detected)" : ""}
+        </option>
+      ))}
+    </select>
   );
 }
