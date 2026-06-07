@@ -100,7 +100,7 @@ export async function verifyEmailToken(token: string) {
   }
 
   try {
-    // Normalize: trim whitespace and replace any spaces with '+' (some email clients break base64url)
+    // Normalize: trim whitespace (some email clients add whitespace)
     const normalizedToken = token.trim();
     const tokenHash = hashEmailVerificationToken(normalizedToken);
 
@@ -116,7 +116,8 @@ export async function verifyEmailToken(token: string) {
     });
 
     if (!verification) {
-      // Log all existing tokens for debugging (just count, not actual hashes)
+      // Token not found — could be a duplicate request after the token was consumed
+      // by a previous deployment's non-idempotent logic, or a genuinely invalid token.
       const tokenCount = await db.emailVerificationToken.count();
       console.error("[EMAIL_VERIFICATION] Token not found. Total tokens in DB:", tokenCount);
       console.error("[EMAIL_VERIFICATION] Token length:", normalizedToken.length, "Token preview:", normalizedToken.substring(0, 8) + "...");
@@ -128,6 +129,20 @@ export async function verifyEmailToken(token: string) {
       return { success: false, error: "Verification link has expired. Request a new one to continue." };
     }
 
+    // Check if the user is already verified (idempotent: duplicate requests get success)
+    const user = await db.user.findUnique({
+      where: { id: verification.userId },
+      select: { emailVerified: true },
+    });
+
+    if (user?.emailVerified) {
+      console.log("[EMAIL_VERIFICATION] User already verified (idempotent success):", verification.userId);
+      // Clean up the token now that we know the user is verified
+      await db.emailVerificationToken.deleteMany({ where: { userId: verification.userId } }).catch(() => {});
+      return { success: true, message: "Email verified. You can sign in now." };
+    }
+
+    // First-time verification: mark user as verified, then delete tokens
     await db.$transaction([
       db.user.update({
         where: { id: verification.userId },
@@ -139,6 +154,7 @@ export async function verifyEmailToken(token: string) {
       db.emailVerificationToken.deleteMany({ where: { userId: verification.userId } }),
     ]);
 
+    console.log("[EMAIL_VERIFICATION] ✅ Email verified for user:", verification.userId);
     return { success: true, message: "Email verified. You can sign in now." };
   } catch (error) {
     console.error("[EMAIL_VERIFICATION] verifyEmailToken error:", error);

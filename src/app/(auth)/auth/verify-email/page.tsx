@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -34,19 +34,19 @@ function VerifyEmailContent() {
     const token = searchParams.get("token");
     const [state, setState] = useState<VerifyState>(token ? "pending" : "no-token");
     const [message, setMessage] = useState("");
+    const verifyCalledRef = useRef(false);
 
     // Auto-verify when token is present (user clicked the link)
     useEffect(() => {
         if (!token) return;
-
-        let cancelled = false;
+        // Guard: only call verifyEmail once (prevents React StrictMode double-fire)
+        if (verifyCalledRef.current) return;
+        verifyCalledRef.current = true;
 
         async function verify() {
             setState("verifying");
 
             const result = await verifyEmail({ token: token! });
-
-            if (cancelled) return;
 
             if (result.error) {
                 setState("error");
@@ -58,8 +58,6 @@ function VerifyEmailContent() {
         }
 
         verify();
-
-        return () => { cancelled = true; };
     }, [token]);
 
     return (
