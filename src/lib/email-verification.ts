@@ -19,10 +19,12 @@ export function hashEmailVerificationToken(token: string) {
 
 export async function sendVerificationEmailForUser(user: VerificationUser) {
   if (!user.email) {
+    console.warn("[EMAIL_VERIFICATION] No email for user:", user.id);
     return { success: false, error: "Email address is required." };
   }
 
   if (user.emailVerified) {
+    console.log("[EMAIL_VERIFICATION] User already verified:", user.id);
     return { success: true, message: "Email is already verified." };
   }
 
@@ -53,7 +55,9 @@ export async function sendVerificationEmailForUser(user: VerificationUser) {
     name: user.name || email.split("@")[0] || "there",
     verifyUrl,
   });
+  console.log("[EMAIL_VERIFICATION] Calling sendEmail to:", email, "from:", process.env.EMAIL_FROM || "(default)");
   const sent = await sendEmail({ to: email, ...template });
+  console.log("[EMAIL_VERIFICATION] sendEmail returned:", sent);
 
   if (!sent) {
     return { success: false, error: "Could not send verification email. Please try again." };

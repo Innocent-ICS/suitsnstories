@@ -47,12 +47,13 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
         const rateLimit = await checkRateLimit({
             scope: "auth-register",
             identifier: `${requestContext.ip}:${email.toLowerCase()}`,
-            limit: 5,
+            limit: 10,
             windowMs: 60 * 60 * 1000,
         });
 
         if (!rateLimit.allowed) {
-            return { error: "Too many signup attempts. Please try again shortly." };
+            console.warn("[REGISTER] Rate limited:", { ip: requestContext.ip, email, remaining: rateLimit.remaining, retryAfter: rateLimit.retryAfter });
+            return { error: `Too many signup attempts. Please try again in ${Math.ceil(rateLimit.retryAfter / 60)} minutes.` };
         }
 
         const existingUser = await db.user.findFirst({
@@ -83,9 +84,12 @@ export const register = async (values: z.infer<typeof RegisterSchema>) => {
 
         // Try sending verification email — don't let failure block account creation
         try {
+            console.log("[REGISTER] Sending verification email to:", email, "userId:", user.id);
             const verificationResult = await sendVerificationEmailForUser(user);
+            console.log("[REGISTER] Verification email result:", JSON.stringify(verificationResult));
 
             if (!verificationResult.success) {
+                console.error("[REGISTER] Verification email failed:", verificationResult.error);
                 return {
                     success: "Account created, but we could not send the verification email. Use the resend link to try again.",
                 };
@@ -122,15 +126,18 @@ export const resendVerification = async (values: z.infer<typeof ResendVerificati
         const rateLimit = await checkRateLimit({
             scope: "auth-resend-verification",
             identifier: `${requestContext.ip}:${email}`,
-            limit: 5,
+            limit: 10,
             windowMs: 60 * 60 * 1000,
         });
 
         if (!rateLimit.allowed) {
-            return { error: "Too many verification email requests. Please try again shortly." };
+            console.warn("[RESEND_VERIFICATION] Rate limited:", { ip: requestContext.ip, email, retryAfter: rateLimit.retryAfter });
+            return { error: `Too many verification email requests. Please try again in ${Math.ceil(rateLimit.retryAfter / 60)} minutes.` };
         }
 
+        console.log("[RESEND_VERIFICATION] Sending verification email for:", email);
         const result = await sendVerificationEmailForAddress(email);
+        console.log("[RESEND_VERIFICATION] Result:", JSON.stringify(result));
 
         if (!result.success) {
             return { error: "error" in result ? result.error : "Could not send verification email." };

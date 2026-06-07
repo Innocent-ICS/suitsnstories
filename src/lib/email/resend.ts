@@ -27,7 +27,8 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
   }
 
   try {
-    const { error } = await resend.emails.send({
+    console.log("[EMAIL] Sending via Resend:", { to, subject, from: FROM_EMAIL });
+    const { data, error } = await resend.emails.send({
       from: FROM_EMAIL,
       to,
       subject,
@@ -36,13 +37,14 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
     });
 
     if (error) {
-      console.error("[EMAIL] Send failed:", JSON.stringify(error));
+      console.error("[EMAIL] Resend API error:", JSON.stringify(error));
       return false;
     }
 
+    console.log("[EMAIL] ✅ Sent successfully, ID:", data?.id);
     return true;
   } catch (error) {
-    console.error("[EMAIL] Unexpected error:", error);
+    console.error("[EMAIL] Unexpected error:", error instanceof Error ? { message: error.message, name: error.name, stack: error.stack?.split("\n").slice(0, 3).join("\n") } : error);
     return false;
   }
 }
