@@ -36,7 +36,7 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
     });
 
     if (error) {
-      console.error("[EMAIL] Send failed:", error);
+      console.error("[EMAIL] Send failed:", JSON.stringify(error));
       return false;
     }
 

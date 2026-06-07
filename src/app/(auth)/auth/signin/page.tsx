@@ -47,7 +47,8 @@ function SignInForm() {
             });
 
             if (result?.error) {
-                const unverified = result.error === "AccessDenied";
+                // Check for unverified email: either via CredentialsSignin code or AccessDenied from signIn callback
+                const unverified = result.code === "email_not_verified" || result.error === "AccessDenied";
                 setNeedsVerification(unverified);
                 setError(unverified ? "Please verify your email before signing in." : "Invalid email or password");
             } else {

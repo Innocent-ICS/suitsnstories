@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import { type DefaultSession } from "next-auth";
+import { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
@@ -49,6 +50,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     where: {
                         email: { equals: email, mode: "insensitive" },
                     },
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                        password: true,
+                        role: true,
+                        emailVerified: true,
+                    },
                 });
 
                 if (!user || !user.password) {
@@ -64,6 +73,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     return null;
                 }
 
+                // Block sign-in if email is not verified
+                if (!user.emailVerified) {
+                    const error = new CredentialsSignin("Email not verified");
+                    error.code = "email_not_verified";
+                    throw error;
+                }
+
                 return {
                     id: user.id,
                     name: user.name,
@@ -76,6 +92,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     callbacks: {
         async signIn({ user, account }) {
             if (account?.provider === "credentials") {
+                // Primary verification check is in authorize() via CredentialsSignin throw.
+                // This is a defence-in-depth fallback.
                 if (!user.id) return false;
 
                 const dbUser = await db.user.findUnique({
@@ -83,7 +101,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     select: { emailVerified: true },
                 });
 
-                return !!dbUser?.emailVerified;
+                if (!dbUser?.emailVerified) {
+                    console.warn("[AUTH] signIn callback blocked unverified user:", user.id);
+                    return false;
+                }
+
+                return true;
             }
 
             if (account?.provider === "google") {

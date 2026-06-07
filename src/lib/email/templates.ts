@@ -90,7 +90,6 @@ export function emailVerificationEmail({
   verifyUrl: string;
 }): { subject: string; html: string; text: string } {
   const firstName = escapeHtml(name.split(" ")[0] || "there");
-  const safeVerifyUrl = escapeHtml(verifyUrl);
 
   return {
     subject: "Verify your Suits & Stories email",
@@ -100,7 +99,7 @@ export function emailVerificationEmail({
         Confirm this email address so your Suits & Stories account is ready to use.
       </p>
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${safeVerifyUrl}" style="${buttonStyle}">
+        <a href="${verifyUrl}" style="${buttonStyle}">
           Verify email
         </a>
       </div>

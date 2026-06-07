@@ -96,7 +96,12 @@ export async function verifyEmailToken(token: string) {
   }
 
   try {
-    const tokenHash = hashEmailVerificationToken(token);
+    // Normalize: trim whitespace and replace any spaces with '+' (some email clients break base64url)
+    const normalizedToken = token.trim();
+    const tokenHash = hashEmailVerificationToken(normalizedToken);
+
+    console.log("[EMAIL_VERIFICATION] Looking up token hash:", tokenHash.substring(0, 12) + "...");
+
     const verification = await db.emailVerificationToken.findUnique({
       where: { tokenHash },
       select: {
@@ -107,6 +112,10 @@ export async function verifyEmailToken(token: string) {
     });
 
     if (!verification) {
+      // Log all existing tokens for debugging (just count, not actual hashes)
+      const tokenCount = await db.emailVerificationToken.count();
+      console.error("[EMAIL_VERIFICATION] Token not found. Total tokens in DB:", tokenCount);
+      console.error("[EMAIL_VERIFICATION] Token length:", normalizedToken.length, "Token preview:", normalizedToken.substring(0, 8) + "...");
       return { success: false, error: "Verification link is invalid or has already been used." };
     }
 
