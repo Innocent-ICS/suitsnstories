@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import {
     sendVerificationEmailForAddress,
     sendVerificationEmailForUser,
+    verifyEmailToken,
 } from "@/lib/email-verification";
 import { checkRateLimit } from "@/lib/security/rate-limit";
 import {
@@ -132,7 +133,7 @@ export const resendVerification = async (values: z.infer<typeof ResendVerificati
         const result = await sendVerificationEmailForAddress(email);
 
         if (!result.success) {
-            return { error: result.error };
+            return { error: "error" in result ? result.error : "Could not send verification email." };
         }
 
         return { success: result.message };
@@ -142,5 +143,31 @@ export const resendVerification = async (values: z.infer<typeof ResendVerificati
             return { error: "This request appears to be from an unauthorized source. Please refresh and try again." };
         }
         return { error: "Could not send verification email. Please try again." };
+    }
+};
+
+const VerifyEmailSchema = z.object({
+    token: z.string().min(1, { message: "Verification token is required." }),
+});
+
+export const verifyEmail = async (values: z.infer<typeof VerifyEmailSchema>) => {
+    try {
+        const validatedFields = VerifyEmailSchema.safeParse(values);
+
+        if (!validatedFields.success) {
+            return { error: "Verification link is missing or invalid." };
+        }
+
+        const { token } = validatedFields.data;
+        const result = await verifyEmailToken(token);
+
+        if (!result.success) {
+            return { error: result.error };
+        }
+
+        return { success: result.message };
+    } catch (error) {
+        console.error("[VERIFY_EMAIL]", error);
+        return { error: "Could not verify email. Please try again or request a new link." };
     }
 };
