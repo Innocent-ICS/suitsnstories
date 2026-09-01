@@ -41,8 +41,8 @@ export function CreateCourseButton() {
         setOpen(false);
         router.push(`/content/${result.courseId}`);
       }
-    } catch (e: any) {
-      setError(e.message || "Failed to create course");
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to create course");
     } finally {
       setLoading(false);
     }

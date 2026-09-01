@@ -10,6 +10,8 @@ import {
   UserIcon,
 } from "@heroicons/react/24/outline";
 
+const PROJECT_LIST_LIMIT = 50;
+
 export default async function ProjectsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/auth/signin");
@@ -25,6 +27,7 @@ export default async function ProjectsPage() {
   if (role === "ADMIN") {
     projects = await db.project.findMany({
       orderBy: { updatedAt: "desc" },
+      take: PROJECT_LIST_LIMIT,
       include: {
         client: { select: { id: true, name: true, image: true } },
         coach: { select: { id: true, name: true, image: true } },
@@ -36,6 +39,7 @@ export default async function ProjectsPage() {
     projects = await db.project.findMany({
       where: { coachId: session.user.id },
       orderBy: { updatedAt: "desc" },
+      take: PROJECT_LIST_LIMIT,
       include: {
         client: { select: { id: true, name: true, image: true } },
         coach: { select: { id: true, name: true, image: true } },
@@ -52,6 +56,7 @@ export default async function ProjectsPage() {
         ],
       },
       orderBy: { updatedAt: "desc" },
+      take: PROJECT_LIST_LIMIT,
       include: {
         client: { select: { id: true, name: true, image: true } },
         coach: { select: { id: true, name: true, image: true } },
@@ -96,6 +101,12 @@ export default async function ProjectsPage() {
         </div>
         {(role === "CLIENT" || role === "PROGRAM_MANAGER") && <NewProjectButton />}
       </div>
+
+      {projects.length === PROJECT_LIST_LIMIT && (
+        <p className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+          Showing the {PROJECT_LIST_LIMIT} most recently updated projects.
+        </p>
+      )}
 
       {projects.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">

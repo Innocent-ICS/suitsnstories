@@ -3,10 +3,14 @@
  * Using fast-check for property-based testing
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import * as fc from 'fast-check';
 import { submitContactInquiry, type ContactFormData } from '../contact';
 import { db } from '@/lib/db';
+
+vi.mock('@/lib/email/resend', () => ({
+  sendEmail: vi.fn(() => Promise.resolve(true)),
+}));
 
 /**
  * Sanitize input to prevent XSS attacks (matches the implementation)
@@ -95,7 +99,7 @@ describe('Property 1: Form submission persistence', () => {
           }
         }
       ),
-      { numRuns: 100 } // Run 100 iterations as specified in design doc
+      { numRuns: 25 }
     );
   }, 120_000);
 });

@@ -38,7 +38,7 @@ export const Carousel3D = ({
             <div className="relative w-full max-w-5xl h-[350px] flex items-center justify-center perspective-1000">
                 {items.map((item, i) => {
                     // Determine position relative to current index
-                    let offset = (i - index + items.length) % items.length;
+                    const offset = (i - index + items.length) % items.length;
 
                     // Adjust offset for cleaner logic (centering 0)
                     // For 3 items: 0 is center, 1 is right, 2 is left (-1)
@@ -53,7 +53,6 @@ export const Carousel3D = ({
                     const isActive = position === 0;
                     const isRight = position === 1;
                     const isLeft = position === -1;
-                    const isHidden = !isActive && !isRight && !isLeft;
 
                     return (
                         <motion.div
@@ -108,4 +107,3 @@ export const Carousel3D = ({
         </div>
     );
 };
-

@@ -34,14 +34,9 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
   const keyHash = hashSecurityValue(`${options.scope}:${options.identifier}`) || "unknown";
 
   try {
-    const result = await db.$transaction(async (tx) => {
-      await tx.rateLimitEvent.deleteMany({
-        where: {
-          scope: options.scope,
-          createdAt: { lt: windowStart },
-        },
-      });
+    await maybeCleanupExpiredRateLimitEvents(options.scope, windowStart);
 
+    const result = await db.$transaction(async (tx) => {
       const count = await tx.rateLimitEvent.count({
         where: {
           scope: options.scope,
@@ -86,6 +81,22 @@ export async function checkRateLimit(options: RateLimitOptions): Promise<RateLim
     console.error("[RATE_LIMIT]", error);
     return { allowed: true, remaining: options.limit, retryAfter: 0 };
   }
+}
+
+async function maybeCleanupExpiredRateLimitEvents(scope: string, windowStart: Date) {
+  const sampleRate = Number(process.env.RATE_LIMIT_CLEANUP_SAMPLE_RATE || "0.02");
+  if (!Number.isFinite(sampleRate) || sampleRate <= 0 || Math.random() > sampleRate) return;
+
+  await db.rateLimitEvent
+    .deleteMany({
+      where: {
+        scope,
+        createdAt: { lt: windowStart },
+      },
+    })
+    .catch((error) => {
+      console.error("[RATE_LIMIT_CLEANUP]", error);
+    });
 }
 
 export async function enforceRateLimit(options: RateLimitOptions) {

@@ -9,7 +9,6 @@ import {
   verifyTransaction,
   generateReference,
 } from "@/lib/paystack";
-import { fulfillAcceleratorProgramPayment } from "@/actions/program";
 import { auditSecurityEvent } from "@/lib/security/audit-log";
 import {
   assertSameOriginRequest,
@@ -46,6 +45,18 @@ type ProgramPaymentData = {
   seatCount: number;
   authorizationUrl?: string;
   accessCode?: string;
+};
+
+type FulfillmentResult = {
+  success: boolean;
+  error?: string;
+  alreadyFulfilled?: boolean;
+  revalidatePaths: string[];
+  audit?: {
+    action: string;
+    outcome?: "SUCCESS" | "FAILED" | "PARTIAL";
+    metadata?: Record<string, unknown>;
+  };
 };
 
 // ── Auth ───────────────────────────────────────────────────────────────
@@ -298,120 +309,236 @@ export async function fulfillPayment(reference: string) {
   // Verify with PayStack
   const tx = await verifyTransaction(reference);
 
-  if (tx.status !== "success") {
-    await db.payment.update({
+  const fulfillment = await db.$transaction(async (transaction) => {
+    await transaction.$queryRaw<Array<{ id: string }>>`
+      SELECT id FROM "Payment" WHERE id = ${payment.id} FOR UPDATE
+    `;
+
+    const lockedPayment = await transaction.payment.findUnique({
       where: { id: payment.id },
+    });
+
+    if (!lockedPayment) {
+      throw new Error("Payment not found");
+    }
+
+    if (lockedPayment.status === "SUCCESS") {
+      return {
+        success: true,
+        alreadyFulfilled: true,
+        revalidatePaths: [],
+      } satisfies FulfillmentResult;
+    }
+
+    if (lockedPayment.status === "FAILED") {
+      return {
+        success: false,
+        error: "Payment not successful",
+        alreadyFulfilled: true,
+        revalidatePaths: [],
+      } satisfies FulfillmentResult;
+    }
+
+    if (tx.status !== "success") {
+      await transaction.payment.update({
+        where: { id: lockedPayment.id },
+        data: {
+          status: "FAILED",
+          providerData: withVerification(lockedPayment.providerData, tx),
+        },
+      });
+
+      return {
+        success: false,
+        error: "Payment not successful",
+        revalidatePaths: [],
+        audit: {
+          action: "PAYMENT_FULFILLMENT_FAILED",
+          outcome: "FAILED",
+          metadata: {
+            providerStatus: tx.status,
+          },
+        },
+      } satisfies FulfillmentResult;
+    }
+
+    const meta = lockedPayment.providerData;
+    const revalidatePaths: string[] = [];
+
+    if (isCoursePaymentData(meta)) {
+      await transaction.enrollment.upsert({
+        where: {
+          userId_courseId: {
+            userId: lockedPayment.userId,
+            courseId: meta.courseId,
+          },
+        },
+        create: {
+          userId: lockedPayment.userId,
+          courseId: meta.courseId,
+          paymentId: lockedPayment.id,
+        },
+        update: {},
+      });
+      revalidatePaths.push("/learn");
+    }
+
+    if (isBookingPaymentData(meta)) {
+      const conflict = await transaction.booking.findFirst({
+        where: {
+          coachId: meta.coachId,
+          status: { in: ["PENDING", "CONFIRMED"] },
+          startTime: { lt: new Date(meta.endTime) },
+          endTime: { gt: new Date(meta.startTime) },
+        },
+      });
+
+      if (conflict) {
+        await transaction.payment.update({
+          where: { id: lockedPayment.id },
+          data: {
+            status: "FAILED",
+            providerData: withVerification(lockedPayment.providerData, {
+              ...tx,
+              fulfillmentError: "booking_conflict",
+            }),
+          },
+        });
+
+        return {
+          success: false,
+          error: "Time slot no longer available — refund pending",
+          revalidatePaths: [],
+          audit: {
+            action: "PAYMENT_FULFILLMENT_FAILED",
+            outcome: "FAILED",
+            metadata: {
+              type: "booking",
+              reason: "booking_conflict",
+            },
+          },
+        } satisfies FulfillmentResult;
+      }
+
+      await transaction.booking.create({
+        data: {
+          clientId: lockedPayment.userId,
+          coachId: meta.coachId,
+          serviceId: meta.serviceId,
+          startTime: new Date(meta.startTime),
+          endTime: new Date(meta.endTime),
+          notes: meta.notes,
+          status: "CONFIRMED",
+          paymentId: lockedPayment.id,
+          timezone: DEFAULT_BOOKING_TIMEZONE,
+        },
+      });
+      revalidatePaths.push("/bookings");
+    }
+
+    if (isProgramPaymentData(meta)) {
+      await fulfillAcceleratorProgramPaymentInTransaction(transaction, meta.programId, lockedPayment.id);
+      revalidatePaths.push("/programs", "/learn");
+    }
+
+    await transaction.payment.update({
+      where: { id: lockedPayment.id },
       data: {
-        status: "FAILED",
-        providerData: withVerification(payment.providerData, tx),
+        status: "SUCCESS",
+        providerData: withVerification(lockedPayment.providerData, tx),
       },
     });
+
+    return {
+      success: true,
+      revalidatePaths,
+      audit: {
+        action: "PAYMENT_FULFILLED",
+        metadata: {
+          type: typeof meta === "object" && meta !== null && "type" in meta ? meta.type : "unknown",
+        },
+      },
+    } satisfies FulfillmentResult;
+  });
+
+  for (const path of fulfillment.revalidatePaths) {
+    revalidatePath(path);
+  }
+
+  if (fulfillment.audit) {
     await auditSecurityEvent({
       actorId: payment.userId,
-      action: "PAYMENT_FULFILLMENT_FAILED",
+      action: fulfillment.audit.action,
       targetType: "Payment",
       targetId: payment.id,
-      outcome: "FAILED",
+      outcome: fulfillment.audit.outcome,
       metadata: {
         provider: payment.provider,
         providerRef: reference,
-        providerStatus: tx.status,
+        ...fulfillment.audit.metadata,
       },
     });
-    return { success: false, error: "Payment not successful" };
   }
 
-  // Mark payment as complete
-  await db.payment.update({
-    where: { id: payment.id },
+  return fulfillment.success
+    ? { success: true, alreadyFulfilled: fulfillment.alreadyFulfilled }
+    : { success: false, error: fulfillment.error };
+}
+
+async function fulfillAcceleratorProgramPaymentInTransaction(
+  transaction: Prisma.TransactionClient,
+  programId: string,
+  paymentId: string | null
+) {
+  const program = await transaction.acceleratorProgram.update({
+    where: { id: programId },
     data: {
-      status: "SUCCESS",
-      providerData: withVerification(payment.providerData, tx),
+      status: "ACTIVE",
+      paymentId,
+    },
+    include: {
+      members: {
+        where: { status: { not: "REMOVED" } },
+      },
     },
   });
 
-  // Fulfill based on type
-  const meta = payment.providerData;
+  for (const member of program.members) {
+    const user = await transaction.user.findFirst({
+      where: { email: { equals: member.email, mode: "insensitive" } },
+      select: { id: true },
+    });
 
-  if (isCoursePaymentData(meta)) {
-    await db.enrollment.upsert({
+    if (!user) {
+      await transaction.programMember.update({
+        where: { id: member.id },
+        data: { status: "INVITED", userId: null, enrollmentId: null },
+      });
+      continue;
+    }
+
+    const enrollment = await transaction.enrollment.upsert({
       where: {
         userId_courseId: {
-          userId: payment.userId,
-          courseId: meta.courseId,
+          userId: user.id,
+          courseId: program.courseId,
         },
       },
       create: {
-        userId: payment.userId,
-        courseId: meta.courseId,
-        paymentId: payment.id,
+        userId: user.id,
+        courseId: program.courseId,
+        paymentId: paymentId || program.paymentId || null,
       },
       update: {},
     });
-    revalidatePath("/learn");
-  }
 
-  if (isBookingPaymentData(meta)) {
-    // Check for conflicts first
-    const conflict = await db.booking.findFirst({
-      where: {
-        coachId: meta.coachId,
-        status: { in: ["PENDING", "CONFIRMED"] },
-        startTime: { lt: new Date(meta.endTime) },
-        endTime: { gt: new Date(meta.startTime) },
-      },
-    });
-
-    if (conflict) {
-      // Refund would go here — for now mark as needs attention
-      await auditSecurityEvent({
-        actorId: payment.userId,
-        action: "PAYMENT_FULFILLMENT_FAILED",
-        targetType: "Payment",
-        targetId: payment.id,
-        outcome: "FAILED",
-        metadata: {
-          provider: payment.provider,
-          providerRef: reference,
-          type: "booking",
-          reason: "booking_conflict",
-        },
-      });
-      return { success: false, error: "Time slot no longer available — refund pending" };
-    }
-
-    await db.booking.create({
+    await transaction.programMember.update({
+      where: { id: member.id },
       data: {
-        clientId: payment.userId,
-        coachId: meta.coachId,
-        serviceId: meta.serviceId,
-        startTime: new Date(meta.startTime),
-        endTime: new Date(meta.endTime),
-        notes: meta.notes,
-        status: "CONFIRMED",
-        paymentId: payment.id,
-        timezone: DEFAULT_BOOKING_TIMEZONE,
+        userId: user.id,
+        enrollmentId: enrollment.id,
+        status: "ACTIVE",
       },
     });
-    revalidatePath("/bookings");
   }
-
-  if (isProgramPaymentData(meta)) {
-    await fulfillAcceleratorProgramPayment(meta.programId, payment.id);
-    revalidatePath("/programs");
-  }
-
-  await auditSecurityEvent({
-    actorId: payment.userId,
-    action: "PAYMENT_FULFILLED",
-    targetType: "Payment",
-    targetId: payment.id,
-    metadata: {
-      provider: payment.provider,
-      providerRef: reference,
-      type: typeof meta === "object" && meta !== null && "type" in meta ? meta.type : "unknown",
-    },
-  });
-
-  return { success: true };
 }

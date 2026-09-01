@@ -12,6 +12,7 @@ const CourseSchema = z.object({
   title: z.string().min(1, "Title is required").max(200).trim(),
   slug: z.string().min(1).max(200).trim().regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens"),
   description: z.string().max(2000).trim().optional(),
+  thumbnail: z.string().url().nullable().optional(),
   price: z.number().min(0).default(0),
   currency: z.string().default("GHS"),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]).default("DRAFT"),

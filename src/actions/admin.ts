@@ -1,5 +1,6 @@
 "use server";
 
+import { UserRole } from "@prisma/client";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -113,8 +114,8 @@ export async function updateUserRole(
       return { success: false, error: "Unauthorized" };
     }
 
-    const validRoles = ["CLIENT", "COACH", "PERCEPTION_ENGINEER", "PROGRAM_MANAGER", "ADMIN"];
-    if (!validRoles.includes(role)) {
+    const validRoles = Object.values(UserRole);
+    if (!validRoles.includes(role as UserRole)) {
       return { success: false, error: "Invalid role" };
     }
 
@@ -125,7 +126,7 @@ export async function updateUserRole(
 
     await db.user.update({
       where: { id: userId },
-      data: { role: role as any },
+      data: { role: role as UserRole },
     });
 
     revalidatePath("/clients");

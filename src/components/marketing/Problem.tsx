@@ -1,6 +1,5 @@
 import { ClockIcon, LightBulbIcon, LifebuoyIcon } from "@heroicons/react/24/outline";
 import { Carousel3D } from "@/components/ui/carousel-3d";
-import { TypewriterEffect } from "@/components/ui/typewriter-effect";
 
 export function Problem() {
     const cards = PROBLEM_CARDS.map((card, index) => (
@@ -30,7 +29,7 @@ export function Problem() {
                     <p className="text-xl md:text-3xl lg:text-4xl font-serif font-light leading-tight text-muted-foreground">
                         Many talented founders and professionals fail not because their ideas lack merit, but because they cannot translate them into <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 font-bold">narratives that move decision-makers to act.</span>
                     </p>
-                    <p className="text-xl font-medium font-serif italic text-foreground pt-4">The Pitcher's Nightmare</p>
+                    <p className="text-xl font-medium font-serif italic text-foreground pt-4">The Pitcher&apos;s Nightmare</p>
                 </div>
 
                 <div className="w-full flex items-center justify-center">
@@ -54,7 +53,7 @@ const PROBLEM_CARDS = [
         name: "Strong Ideas Overlooked",
         designation: "The Cost",
         icon: <LightBulbIcon className="w-6 h-6" />,
-        description: "Brilliant innovation often dies in the room—not because the product failed, but because the story didn't land."
+        description: "Brilliant innovation often dies in the room, not because the product failed, but because the story did not land."
     },
     {
         name: "Clarity Under Pressure",

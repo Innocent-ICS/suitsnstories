@@ -1,31 +1,8 @@
-import { LightBulbIcon, Square3Stack3DIcon, UsersIcon, ShieldExclamationIcon } from "@heroicons/react/24/outline";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 
 export function Methodology() {
-    const steps = [
-        {
-            icon: LightBulbIcon, // Was Brain
-            title: "Scale-Invariant Structure",
-            description: "A fractal decision framework. Whether you have 30 seconds or 30 minutes, the core narrative structure remains the same."
-        },
-        {
-            icon: UsersIcon,
-            title: "The 4 Invariant Questions",
-            description: "Mastering the only four questions every investor and decision-maker is subconsciously asking."
-        },
-        {
-            icon: Square3Stack3DIcon, // Was Layers (3D stack is closer to layers)
-            title: "The 4-Layer Pitch Cake",
-            description: "A systematic method for building narrative density, from the simple core to complex nuance."
-        },
-        {
-            icon: ShieldExclamationIcon, // Was ShieldAlert
-            title: "Control Under Pressure",
-            description: "The ability to compress, expand, and pivot your story in real-time without losing narrative integrity."
-        }
-    ];
-
     return (
         <section className="py-24 bg-muted/50 border-y border-border/40">
             <div className="container px-4 mx-auto">
@@ -42,7 +19,7 @@ export function Methodology() {
                         <div className="relative h-64 md:h-96 w-full p-8 md:p-12 flex items-center justify-center bg-muted/20">
                             <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-inner">
                                 <Image
-                                    src="/images/fractal.png"
+                                    src="/images/Fractal.png"
                                     alt="Fractal Methodology"
                                     fill
                                     className="object-cover"
@@ -117,7 +94,7 @@ export function Methodology() {
 
                 <div className="mt-16 text-center">
                     <Button variant="outline" asChild className="rounded-full border-2 border-purple-600 text-purple-700 hover:bg-purple-50 dark:border-purple-400 dark:text-purple-300 dark:hover:bg-purple-900/20">
-                        <a href="/methodology">Read Deep Dive: The Fractal Methodology</a>
+                        <Link href="/methodology">Read Deep Dive: The Fractal Methodology</Link>
                     </Button>
                 </div>
             </div>

@@ -6,21 +6,21 @@ import { useEffect, useState } from "react";
 export function PaymentBanner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [visible, setVisible] = useState(false);
+  const [dismissedPayment, setDismissedPayment] = useState<string | null>(null);
   const payment = searchParams.get("payment");
   const reason = searchParams.get("reason");
+  const visible = Boolean(payment) && dismissedPayment !== payment;
 
   useEffect(() => {
-    if (payment) {
-      setVisible(true);
-      // Auto-dismiss after 8 seconds and clean URL
-      const timer = setTimeout(() => {
-        setVisible(false);
-        router.replace("/dashboard", { scroll: false });
-      }, 8000);
-      return () => clearTimeout(timer);
-    }
-  }, [payment, router]);
+    if (!payment || dismissedPayment === payment) return;
+
+    const timer = setTimeout(() => {
+      setDismissedPayment(payment);
+      router.replace("/dashboard", { scroll: false });
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [dismissedPayment, payment, router]);
 
   if (!visible || !payment) return null;
 
@@ -56,7 +56,7 @@ export function PaymentBanner() {
       <p className={`text-sm font-medium ${c.text}`}>{c.message}</p>
       <button
         onClick={() => {
-          setVisible(false);
+          setDismissedPayment(payment);
           router.replace("/dashboard", { scroll: false });
         }}
         className={`text-xs ${c.text} hover:opacity-70 transition-opacity ml-4 shrink-0`}

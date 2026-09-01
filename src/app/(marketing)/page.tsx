@@ -5,9 +5,12 @@ import { SocialProof } from "@/components/marketing/SocialProof";
 import { Testimonials } from "@/components/marketing/Testimonials";
 import { testimonials, type Testimonial } from "@/data/testimonials";
 import { db } from "@/lib/db";
+import { unstable_cache } from "next/cache";
 
-export default async function Home() {
-  const approvedRecommendations = await db.recommendation.findMany({
+export const revalidate = 300;
+
+const getApprovedRecommendations = unstable_cache(
+  async () => db.recommendation.findMany({
     where: { status: "APPROVED" },
     include: {
       user: {
@@ -26,6 +29,14 @@ export default async function Home() {
     },
     orderBy: [{ featured: "desc" }, { reviewedAt: "desc" }, { createdAt: "desc" }],
     take: 12,
+  }),
+  ["marketing-approved-recommendations"],
+  { revalidate: 300, tags: ["marketing-recommendations"] }
+);
+
+export default async function Home() {
+  const approvedRecommendations = await getApprovedRecommendations().catch(() => {
+    return [];
   });
 
   const communityTestimonials: Testimonial[] = approvedRecommendations.map((recommendation) => ({

@@ -2,7 +2,7 @@ import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
-const databaseUrl = withConnectionLimit(process.env.DATABASE_URL);
+const databaseUrl = withProductionConnectionSettings(process.env.DATABASE_URL);
 
 export const db =
   globalForPrisma.prisma ??
@@ -18,11 +18,20 @@ export const db =
 
 globalForPrisma.prisma = db;
 
-function withConnectionLimit(databaseUrl?: string) {
+function withProductionConnectionSettings(databaseUrl?: string) {
   if (!databaseUrl || process.env.NODE_ENV !== "production") return databaseUrl;
 
   try {
     const url = new URL(databaseUrl);
+
+    if (isSupabasePooler(url) && url.port === "5432" && process.env.DATABASE_POOLING_MODE !== "session") {
+      url.port = "6543";
+    }
+
+    if (isSupabasePooler(url) && url.port === "6543" && !url.searchParams.has("pgbouncer")) {
+      url.searchParams.set("pgbouncer", "true");
+    }
+
     if (!url.searchParams.has("connection_limit")) {
       url.searchParams.set("connection_limit", process.env.DATABASE_CONNECTION_LIMIT || "1");
     }
@@ -33,4 +42,8 @@ function withConnectionLimit(databaseUrl?: string) {
   } catch {
     return databaseUrl;
   }
+}
+
+function isSupabasePooler(url: URL) {
+  return url.hostname.endsWith(".pooler.supabase.com");
 }

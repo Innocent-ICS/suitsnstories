@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +18,7 @@ import {
   updateLesson,
   deleteLesson,
 } from "@/actions/course";
-import { QuizEditor } from "./quiz-editor";
+import { QuizEditor, type QuizData } from "./quiz-editor";
 import {
   PlusIcon,
   TrashIcon,
@@ -37,10 +38,13 @@ interface LessonData {
   type: string;
   content: string | null;
   videoUrl: string | null;
-  quizData: any;
+  quizData: unknown;
   order: number;
   isFree: boolean;
 }
+
+type CourseStatusValue = "DRAFT" | "PUBLISHED" | "ARCHIVED";
+type LessonTypeValue = "TEXT" | "VIDEO" | "QUIZ";
 
 interface ModuleData {
   id: string;
@@ -92,12 +96,12 @@ export function CourseEditor({ course }: CourseEditorProps) {
         slug: formData.get("slug") as string,
         description: formData.get("description") as string,
         price: Math.round(parseFloat(formData.get("price") as string || "0") * 100),
-        status: formData.get("status") as any,
+        status: formData.get("status") as CourseStatusValue,
       });
       setMessage("Course saved");
       router.refresh();
-    } catch (e: any) {
-      setMessage(`Error: ${e.message}`);
+    } catch (error) {
+      setMessage(`Error: ${getErrorMessage(error)}`);
     } finally {
       setSaving(false);
     }
@@ -126,7 +130,7 @@ export function CourseEditor({ course }: CourseEditorProps) {
       const result = await res.json();
 
       if (result.url) {
-        await updateCourse(course.id, { thumbnail: result.url } as any);
+        await updateCourse(course.id, { thumbnail: result.url });
         router.refresh();
       }
     } catch {
@@ -142,8 +146,8 @@ export function CourseEditor({ course }: CourseEditorProps) {
     try {
       await createModule({ courseId: course.id, title: "New Module" });
       router.refresh();
-    } catch (e: any) {
-      setMessage(`Error: ${e.message}`);
+    } catch (error) {
+      setMessage(`Error: ${getErrorMessage(error)}`);
     }
   }
 
@@ -164,14 +168,14 @@ export function CourseEditor({ course }: CourseEditorProps) {
       const result = await createLesson({
         moduleId,
         title: `New ${type.toLowerCase()} lesson`,
-        type: type as any,
+        type: type as LessonTypeValue,
       });
       if (result.success) {
         setEditingLesson(result.lessonId!);
         router.refresh();
       }
-    } catch (e: any) {
-      setMessage(`Error: ${e.message}`);
+    } catch (error) {
+      setMessage(`Error: ${getErrorMessage(error)}`);
     }
   }
 
@@ -226,9 +230,11 @@ export function CourseEditor({ course }: CourseEditorProps) {
           <Label>Thumbnail</Label>
           <div className="mt-1.5 flex items-center gap-4">
             {course.thumbnail ? (
-              <img
+              <Image
                 src={course.thumbnail}
                 alt="Thumbnail"
+                width={128}
+                height={80}
                 className="h-20 w-32 object-cover rounded-lg border border-border"
               />
             ) : (
@@ -456,7 +462,7 @@ function LessonEditor({
   const [content, setContent] = useState(lesson.content || "");
   const [videoUrl, setVideoUrl] = useState(lesson.videoUrl || "");
   const [isFree, setIsFree] = useState(lesson.isFree);
-  const [quizData, setQuizData] = useState(lesson.quizData || { questions: [], passingScore: 70 });
+  const [quizData, setQuizData] = useState<QuizData>(() => normalizeQuizData(lesson.quizData));
   const [saving, setSaving] = useState(false);
   const router = useRouter();
 
@@ -543,6 +549,43 @@ function LessonEditor({
       </div>
     </div>
   );
+}
+
+function normalizeQuizData(value: unknown): QuizData {
+  if (
+    value &&
+    typeof value === "object" &&
+    "questions" in value &&
+    Array.isArray(value.questions)
+  ) {
+    return {
+      questions: value.questions.filter(isQuizQuestion),
+      passingScore:
+        "passingScore" in value && typeof value.passingScore === "number"
+          ? value.passingScore
+          : 70,
+    };
+  }
+
+  return { questions: [], passingScore: 70 };
+}
+
+function isQuizQuestion(value: unknown): value is QuizData["questions"][number] {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+
+  return (
+    typeof candidate.id === "string" &&
+    typeof candidate.question === "string" &&
+    Array.isArray(candidate.options) &&
+    candidate.options.every((option) => typeof option === "string") &&
+    typeof candidate.correctAnswer === "string"
+  );
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unknown error";
 }
 
 // ── Video URL Helper ───────────────────────────────────────────────────

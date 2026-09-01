@@ -13,6 +13,9 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+const MAX_ACTIVE_ANALYSES_PER_USER = Number(process.env.PERCEPTOSCOPE_MAX_ACTIVE_PER_USER || "2");
+const MAX_ACTIVE_ANALYSES_GLOBAL = Number(process.env.PERCEPTOSCOPE_MAX_ACTIVE_GLOBAL || "25");
+
 /**
  * Accepts two content types:
  * 1. JSON — { storagePath, fileName, fileType, fileSize, ... }  (storage upload path)
@@ -47,6 +50,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Too many diagnosis uploads. Please try again shortly." },
         { status: 429, headers: { "Retry-After": String(rateLimit.retryAfter) } }
+      );
+    }
+
+    const [userActiveAnalyses, globalActiveAnalyses] = await Promise.all([
+      db.perceptoscopeAnalysis.count({
+        where: {
+          userId,
+          status: { in: ["PENDING", "PROCESSING"] },
+        },
+      }),
+      db.perceptoscopeAnalysis.count({
+        where: {
+          status: { in: ["PENDING", "PROCESSING"] },
+        },
+      }),
+    ]);
+
+    if (userActiveAnalyses >= MAX_ACTIVE_ANALYSES_PER_USER) {
+      return NextResponse.json(
+        { error: "You already have pitch analyses in progress. Please wait for one to finish before uploading another deck." },
+        { status: 429, headers: { "Retry-After": "60" } }
+      );
+    }
+
+    if (globalActiveAnalyses >= MAX_ACTIVE_ANALYSES_GLOBAL) {
+      return NextResponse.json(
+        { error: "Perceptoscope is busy right now. Please try again shortly." },
+        { status: 503, headers: { "Retry-After": "120" } }
       );
     }
 

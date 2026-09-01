@@ -3,6 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import Image from "next/image";
 
 import { FadeIn, FadeInStagger, fadeInItem } from "@/components/ui/motion";
 import { motion } from "framer-motion";
@@ -23,7 +24,7 @@ export function OurWayContent() {
                 </FadeIn>
                 <FadeIn delay={0.2}>
                     <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-light">
-                        At the core of our pedagogy is a philosophy that differentiates us from traditional storytelling. Not just telling your "why"—but showing it.
+                        At the core of our pedagogy is a philosophy that differentiates us from traditional storytelling. Not just telling your &ldquo;why&rdquo;, but showing it.
                     </p>
                 </FadeIn>
             </section>
@@ -95,7 +96,7 @@ export function OurWayContent() {
                         They can compress, expand, and translate their story across formats and audiences, creating lasting understanding and belief.
                     </p>
                     <Button size="lg" className="rounded-full px-8" asChild>
-                        <a href="/#contact">Start Your Journey</a>
+                        <Link href="/#contact">Start Your Journey</Link>
                     </Button>
                 </div>
             </section>
@@ -266,10 +267,12 @@ function PhilosophyCarousel() {
                             {/* Left: Image */}
                             <div className="relative rounded-xl overflow-hidden border border-white/10 bg-white/5 h-64 md:h-96 w-full group order-1 md:order-1">
                                 <div className="absolute inset-0 z-10 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] pointer-events-none rounded-xl" />
-                                <img
+                                <Image
                                     src={PHILOSOPHY_STEPS[activeTab].image}
                                     alt={PHILOSOPHY_STEPS[activeTab].alt}
-                                    className="w-full h-full object-cover opacity-90 transition-opacity"
+                                    fill
+                                    sizes="(min-width: 768px) 45vw, 100vw"
+                                    className="object-cover opacity-90 transition-opacity"
                                 />
                             </div>
 

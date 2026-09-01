@@ -21,7 +21,7 @@ interface QuizQuestion {
   correctAnswer: string;
 }
 
-interface QuizData {
+export interface QuizData {
   questions: QuizQuestion[];
   passingScore: number;
 }

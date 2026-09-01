@@ -39,6 +39,7 @@ export default async function ProjectPage({ params }: Props) {
       invitations: {
         where: { status: "PENDING" },
         orderBy: { createdAt: "desc" },
+        take: 25,
         select: {
           id: true,
           email: true,
@@ -48,9 +49,10 @@ export default async function ProjectPage({ params }: Props) {
           createdAt: true,
         },
       },
-      deliverables: { orderBy: { createdAt: "desc" } },
+      deliverables: { orderBy: { createdAt: "desc" }, take: 50 },
       comments: {
         orderBy: { createdAt: "asc" },
+        take: 100,
         include: { author: { select: { id: true, name: true, image: true, role: true } } },
       },
     },

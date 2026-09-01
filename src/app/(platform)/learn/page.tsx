@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import Link from "next/link";
+import Image from "next/image";
 import {
   AcademicCapIcon,
   BookOpenIcon,
@@ -19,10 +20,20 @@ export default async function LearnPage() {
     const courses = await db.course.findMany({
       where: { status: "PUBLISHED" },
       orderBy: { createdAt: "asc" },
+      take: 50,
       include: {
         modules: {
           include: {
-            lessons: { orderBy: { order: "asc" } },
+            lessons: {
+              orderBy: { order: "asc" },
+              select: {
+                id: true,
+                title: true,
+                order: true,
+                isFree: true,
+                type: true,
+              },
+            },
             _count: { select: { lessons: true } },
           },
           orderBy: { order: "asc" },
@@ -87,7 +98,13 @@ export default async function LearnPage() {
                   {/* Thumbnail */}
                   <div className="aspect-video rounded-lg overflow-hidden mb-4">
                     {course.thumbnail ? (
-                      <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                      <Image
+                        src={course.thumbnail}
+                        alt={course.title}
+                        width={640}
+                        height={360}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                         <AcademicCapIcon className="h-10 w-10 text-primary/40 group-hover:text-primary/60 transition-colors" />
@@ -166,7 +183,13 @@ export default async function LearnPage() {
                 >
                   <div className="aspect-video rounded-lg overflow-hidden mb-4">
                     {course.thumbnail ? (
-                      <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover" />
+                      <Image
+                        src={course.thumbnail}
+                        alt={course.title}
+                        width={640}
+                        height={360}
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                         <AcademicCapIcon className="h-10 w-10 text-primary/40 group-hover:text-primary/60 transition-colors" />

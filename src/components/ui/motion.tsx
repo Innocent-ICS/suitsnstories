@@ -1,8 +1,7 @@
 
 "use client";
 
-import { motion, useInView, UseInViewOptions } from "framer-motion";
-import { useRef } from "react";
+import { motion, UseInViewOptions, type Variants } from "framer-motion";
 
 type FadeInProps = {
     children: React.ReactNode;
@@ -56,7 +55,7 @@ export function FadeInStagger({
     );
 }
 
-export const fadeInItem: any = {
+export const fadeInItem: Variants = {
     hidden: { opacity: 0, y: 24 },
     visible: {
         opacity: 1,

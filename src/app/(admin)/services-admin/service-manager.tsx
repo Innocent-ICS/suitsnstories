@@ -152,8 +152,8 @@ function ServiceForm({
         await createService(data);
       }
       onSaved();
-    } catch (e: any) {
-      setError(e.message);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to save service");
     } finally {
       setLoading(false);
     }

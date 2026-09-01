@@ -151,6 +151,7 @@
 
   html {
     min-height: 100%;
+    width: 100%;
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
@@ -158,6 +159,8 @@
 
   body {
     @apply min-h-dvh bg-background text-foreground font-sans antialiased;
+    width: 100%;
+    overflow-x: hidden;
     overscroll-behavior-y: none;
     -webkit-tap-highlight-color: transparent;
   }
@@ -220,17 +223,10 @@
   }
 
   @media (display-mode: standalone) {
+    html,
     body {
+      min-height: 100dvh;
       background: var(--background);
-      /* Prevent overscroll bounce in PWA mode */
-      overflow: hidden;
-    }
-
-    /* The root layout container needs to be the scroll container */
-    body > div:first-child {
-      height: 100dvh;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
     }
   }
 
@@ -246,4 +242,3 @@
     }
   }
 }
-

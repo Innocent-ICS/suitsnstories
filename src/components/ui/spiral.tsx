@@ -2,19 +2,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 
 export const Spiral = () => {
-    // Use a fixed set of particles arranged in a spiral
-    // We'll create 3 arms of the spiral
-    const particles = Array.from({ length: 30 }).map((_, i) => i);
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
-    if (!isMounted) return null;
+    const particles = useMemo(() => Array.from({ length: 30 }).map((_, i) => i), []);
 
     return (
         <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-30 select-none">

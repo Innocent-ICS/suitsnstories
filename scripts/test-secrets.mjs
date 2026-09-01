@@ -6,7 +6,6 @@
  */
 
 import { config } from 'dotenv';
-import { readFileSync } from 'fs';
 
 // Load .env.local
 config({ path: '.env.local' });

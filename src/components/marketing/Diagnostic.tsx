@@ -1,9 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CheckIcon, ArrowRightIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { FadeIn, FadeInStagger, fadeInItem } from "@/components/ui/motion";
-import { motion } from "framer-motion";
+import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { FadeIn } from "@/components/ui/motion";
 
 export function Diagnostic() {
     return (
@@ -17,7 +16,7 @@ export function Diagnostic() {
                         Get clarity on what’s actually holding your pitch back.
                     </p>
                     <p className="text-muted-foreground italic max-w-2xl mx-auto pt-4 border-t border-border/40 mt-8">
-                        "Most pitches fail because the story is doing too much, too little, or the wrong thing at the wrong time."
+                        &ldquo;Most pitches fail because the story is doing too much, too little, or the wrong thing at the wrong time.&rdquo;
                     </p>
                 </FadeIn>
 
@@ -43,7 +42,7 @@ export function Diagnostic() {
 
                 {/* Key Outcomes (Streamlined) */}
                 <FadeIn className="space-y-8 text-center">
-                    <h2 className="text-3xl font-serif text-foreground">What You'll Get</h2>
+                    <h2 className="text-3xl font-serif text-foreground">What You&apos;ll Get</h2>
                     <div className="grid sm:grid-cols-2 gap-4 text-left max-w-3xl mx-auto">
                         <OutcomeCard>Identified core story fracture points</OutcomeCard>
                         <OutcomeCard>Diagnosis of value & problem framing</OutcomeCard>

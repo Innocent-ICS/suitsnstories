@@ -38,6 +38,9 @@
   ],
   "exclude": [
     "node_modules",
-    "_references"
+    ".next",
+    "_references",
+    "samples",
+    "docs"
   ]
 }

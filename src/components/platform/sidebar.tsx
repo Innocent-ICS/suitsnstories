@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   HomeIcon,
@@ -101,7 +102,7 @@ interface SidebarProps {
  * Active item has a right-edge purple accent border
  * 0.5px whisper border between sidebar and content (Principle III)
  */
-export function Sidebar({ role, userName }: SidebarProps) {
+export function Sidebar({ role }: SidebarProps) {
   const pathname = usePathname();
   const navItems = getNavForRole(role);
 
@@ -123,9 +124,11 @@ export function Sidebar({ role, userName }: SidebarProps) {
             className="flex h-7 w-7 items-center justify-center rounded-md"
             style={{ background: "linear-gradient(135deg, #9333ea, #a78bfa)" }}
           >
-            <img
+            <Image
               src="/images/logo-dark.png"
               alt=""
+              width={16}
+              height={16}
               className="h-4 w-4 object-contain"
             />
           </div>

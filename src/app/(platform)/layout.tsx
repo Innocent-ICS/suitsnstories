@@ -30,16 +30,16 @@ export default async function PlatformLayout({
   const role = user.role as UserRole;
 
   return (
-    <div className="flex min-h-dvh bg-background">
+    <div className="flex h-dvh min-h-dvh overflow-hidden bg-background">
       <Sidebar role={role} userName={user.name} />
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex min-h-0 flex-1 flex-col min-w-0">
         <Topbar
           userName={user.name}
           userEmail={user.email}
           userRole={role}
           userImage={user.image}
         />
-        <main className="flex-1 overflow-y-auto p-4 pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:p-6 lg:p-8">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 pb-[calc(6.75rem+env(safe-area-inset-bottom))] md:p-6 lg:p-8">
           {children}
         </main>
       </div>

@@ -9,6 +9,7 @@ const { dbMock, sendEmailMock } = vi.hoisted(() => {
       findUnique: vi.fn(),
     },
     user: {
+      findUnique: vi.fn(),
       findFirst: vi.fn(),
       update: vi.fn(),
     },
@@ -35,6 +36,7 @@ describe("email verification", () => {
 
     dbMock.emailVerificationToken.create.mockResolvedValue({});
     dbMock.emailVerificationToken.deleteMany.mockResolvedValue({ count: 0 });
+    dbMock.user.findUnique.mockResolvedValue(null);
     dbMock.user.update.mockResolvedValue({});
     sendEmailMock.mockResolvedValue(true);
   });
@@ -79,6 +81,9 @@ describe("email verification", () => {
       userId: "user_1",
       email: "ada@example.com",
       expiresAt: new Date(Date.now() + 60_000),
+    });
+    dbMock.user.findUnique.mockResolvedValue({
+      emailVerified: null,
     });
 
     const result = await verifyEmailToken(token);

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import Image from "next/image";
 import { RecommendationReviewActions } from "./recommendation-review-actions";
 
 export default async function RecommendationsAdminPage() {
@@ -69,9 +70,11 @@ export default async function RecommendationsAdminPage() {
 
                   <div className="flex flex-wrap items-center gap-3 text-sm">
                     {recommendation.user.image ? (
-                      <img
+                      <Image
                         src={recommendation.user.image}
                         alt=""
+                        width={32}
+                        height={32}
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     ) : (

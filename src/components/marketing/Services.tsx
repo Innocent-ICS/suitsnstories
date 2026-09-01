@@ -1,24 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { CheckIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
 import { FadeIn, FadeInStagger, fadeInItem } from "@/components/ui/motion";
 import { motion } from "framer-motion";
-
-const clients = [
-    {
-        title: "Early-Stage Founders",
-        description: "We help founders articulate compelling investor narratives, refine pitch logic, and communicate value beyond features and technology. Our work supports pre-seed to early-stage ventures preparing for funding, demo days, and strategic conversations.",
-    },
-    {
-        title: "High-Performing Professionals",
-        description: "We work with professionals navigating competitive transitions—applications, promotions, interviews, and leadership roles—where narrative clarity and differentiation are decisive.",
-    },
-    {
-        title: "Executives and Senior Leaders",
-        description: "We support leaders communicating vision, strategy, and change to boards, teams, and external stakeholders—especially where complexity and skepticism are high.",
-    },
-];
 
 export function Services() {
     return (
@@ -62,7 +48,7 @@ export function Services() {
                             {/* CTA */}
                             <div className="mb-8 space-y-2.5">
                                 <Button className="w-full rounded-full h-11 text-sm font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md transition-all hover:scale-[1.02]" asChild>
-                                    <a href="/learn">Enroll Now</a>
+                                    <Link href="/learn">Enroll Now</Link>
                                 </Button>
                                 <p className="text-center text-xs text-muted-foreground">
                                     Preview select lessons at no cost — no card needed
@@ -163,22 +149,14 @@ export function Services() {
                             Not sure which path fits you? <span className="block md:inline text-foreground font-medium">Start with a 30-minute Pitch Diagnostic.</span>
                         </p>
                         <Button variant="ghost" className="text-primary hover:text-primary/80 hover:bg-primary/5 group text-lg" asChild>
-                            <a href="/diagnostic">
+                            <Link href="/diagnostic">
                                 Get a Pitch Diagnosis <ArrowRightIcon className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                            </a>
+                            </Link>
                         </Button>
                     </FadeIn>
                 </div>
             </div>
         </section>
-    );
-}
-
-function Badge({ text }: { text: string }) {
-    return (
-        <span className="px-4 py-1.5 rounded-full bg-purple-500/10 backdrop-blur-sm text-purple-300 text-sm border border-purple-500/20 font-medium">
-            {text}
-        </span>
     );
 }
 

@@ -3,7 +3,7 @@
 import * as z from "zod";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 const RecommendationSchema = z.object({
   text: z
@@ -107,6 +107,7 @@ export async function reviewRecommendation(
     revalidatePath("/");
     revalidatePath("/recommendations");
     revalidatePath("/recommendations-admin");
+    revalidateTag("marketing-recommendations", "max");
 
     return { success: true };
   } catch (error) {
@@ -132,6 +133,7 @@ export async function toggleRecommendationFeatured(
 
     revalidatePath("/");
     revalidatePath("/recommendations-admin");
+    revalidateTag("marketing-recommendations", "max");
 
     return { success: true };
   } catch (error) {

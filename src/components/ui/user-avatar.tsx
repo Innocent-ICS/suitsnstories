@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { UserIcon } from "@heroicons/react/24/solid";
 
 interface UserAvatarProps {
@@ -25,16 +26,20 @@ const iconSizes = {
 export function UserAvatar({ src, name, size = "sm", className = "" }: UserAvatarProps) {
   const [imgError, setImgError] = useState(false);
 
-  const showImage = src && !imgError;
+  const showImage = src && !imgError && isSupportedAvatarUrl(src);
 
   if (showImage) {
     return (
-      <img
-        src={src}
-        alt={name || "User"}
-        onError={() => setImgError(true)}
-        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
-      />
+      <span className={`relative block shrink-0 overflow-hidden rounded-full ${sizeClasses[size]} ${className}`}>
+        <Image
+          src={src}
+          alt={name || "User"}
+          fill
+          sizes={size === "lg" ? "56px" : size === "md" ? "40px" : "32px"}
+          onError={() => setImgError(true)}
+          className="object-cover"
+        />
+      </span>
     );
   }
 
@@ -45,4 +50,20 @@ export function UserAvatar({ src, name, size = "sm", className = "" }: UserAvata
       <UserIcon className={`${iconSizes[size]} text-primary/60`} />
     </div>
   );
+}
+
+function isSupportedAvatarUrl(src: string) {
+  if (src.startsWith("/")) return true;
+
+  try {
+    const url = new URL(src);
+    return (
+      url.protocol === "https:" &&
+      (url.hostname === "lh3.googleusercontent.com" ||
+        url.hostname.endsWith(".googleusercontent.com") ||
+        url.hostname.endsWith(".supabase.co"))
+    );
+  } catch {
+    return false;
+  }
 }

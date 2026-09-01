@@ -58,7 +58,7 @@ export default async function CourseEditorPage({ params }: CourseEditorPageProps
               type: l.type,
               content: l.content,
               videoUrl: l.videoUrl,
-              quizData: l.quizData as any,
+              quizData: l.quizData,
               order: l.order,
               isFree: l.isFree,
             })),

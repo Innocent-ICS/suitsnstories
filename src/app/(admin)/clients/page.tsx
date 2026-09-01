@@ -3,54 +3,66 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { RoleChanger } from "./role-changer";
 import { DeleteUserButton } from "./delete-user-button";
 
+const ADMIN_USER_LIST_LIMIT = 100;
+
 export default async function AdminClientsPage() {
   const now = new Date();
-  const users = await db.user.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      profile: true,
-      _count: {
-        select: {
-          enrollments: true,
-          clientBookings: true,
-          ownedProjects: true,
+  const [users, totalUsers, roleStats] = await Promise.all([
+    db.user.findMany({
+      orderBy: { createdAt: "desc" },
+      take: ADMIN_USER_LIST_LIMIT,
+      include: {
+        profile: true,
+        _count: {
+          select: {
+            enrollments: true,
+            clientBookings: true,
+            ownedProjects: true,
+          },
+        },
+        clientBookings: {
+          where: {
+            startTime: { gte: now },
+            status: { in: ["PENDING", "CONFIRMED"] },
+          },
+          orderBy: { startTime: "asc" },
+          take: 1,
+          include: { service: { select: { title: true } } },
+        },
+        ownedProjects: {
+          where: {
+            status: { in: ["BRIEF", "IN_PROGRESS", "REVIEW", "REVISION"] },
+          },
+          orderBy: { updatedAt: "desc" },
+          take: 3,
+          select: { id: true, title: true, status: true, updatedAt: true },
+        },
+        enrollments: {
+          orderBy: { updatedAt: "desc" },
+          take: 1,
+          select: {
+            completedAt: true,
+            course: { select: { title: true } },
+          },
         },
       },
-      clientBookings: {
-        where: {
-          startTime: { gte: now },
-          status: { in: ["PENDING", "CONFIRMED"] },
-        },
-        orderBy: { startTime: "asc" },
-        take: 1,
-        include: { service: { select: { title: true } } },
-      },
-      ownedProjects: {
-        where: {
-          status: { in: ["BRIEF", "IN_PROGRESS", "REVIEW", "REVISION"] },
-        },
-        orderBy: { updatedAt: "desc" },
-        take: 3,
-        select: { id: true, title: true, status: true, updatedAt: true },
-      },
-      enrollments: {
-        orderBy: { updatedAt: "desc" },
-        take: 1,
-        select: {
-          completedAt: true,
-          course: { select: { title: true } },
-        },
-      },
-    },
-  });
+    }),
+    db.user.count(),
+    db.user.groupBy({
+      by: ["role"],
+      _count: { _all: true },
+    }),
+  ]);
+
+  const roleCountByRole = new Map(roleStats.map((stat) => [stat.role, stat._count._all]));
 
   const roleCounts = {
-    total: users.length,
-    clients: users.filter((u) => u.role === "CLIENT").length,
-    coaches: users.filter((u) => u.role === "COACH").length,
-    engineers: users.filter((u) => u.role === "PERCEPTION_ENGINEER").length,
-    programManagers: users.filter((u) => u.role === "PROGRAM_MANAGER").length,
-    admins: users.filter((u) => u.role === "ADMIN").length,
+    total: totalUsers,
+    clients: roleCountByRole.get("CLIENT") || 0,
+    coaches: roleCountByRole.get("COACH") || 0,
+    engineers: roleCountByRole.get("PERCEPTION_ENGINEER") || 0,
+    programManagers: roleCountByRole.get("PROGRAM_MANAGER") || 0,
+    admins: roleCountByRole.get("ADMIN") || 0,
   };
   const clientUsers = users.filter((u) => u.role === "CLIENT");
   const attentionClients = clientUsers.filter((user) => {
@@ -68,7 +80,7 @@ export default async function AdminClientsPage() {
       <div>
         <h1 className="text-3xl font-serif text-foreground">Users</h1>
         <p className="text-muted-foreground mt-1">
-          Manage platform users and their roles.
+          Manage platform users and their roles. Showing the latest {Math.min(users.length, ADMIN_USER_LIST_LIMIT)} users.
         </p>
       </div>
 

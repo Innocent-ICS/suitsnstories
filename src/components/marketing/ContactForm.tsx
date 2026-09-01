@@ -35,7 +35,7 @@ export function ContactForm({ onCancel }: { onCancel?: () => void }) {
             } else {
                 setError(result.error || "Something went wrong. Please try again.");
             }
-        } catch (err) {
+        } catch {
             setError("Failed to submit inquiry. Please try again later.");
         } finally {
             setLoading(false);
@@ -50,7 +50,7 @@ export function ContactForm({ onCancel }: { onCancel?: () => void }) {
                 </div>
                 <h3 className="text-2xl font-serif text-foreground mb-2">Message Sent</h3>
                 <p className="text-muted-foreground mb-6">
-                    Thank you for reaching out. We'll be in touch shortly.
+                    Thank you for reaching out. We&apos;ll be in touch shortly.
                 </p>
                 <Button
                     onClick={onCancel}

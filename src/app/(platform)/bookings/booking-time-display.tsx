@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { ClockIcon } from "@heroicons/react/24/outline";
 
 interface BookingTimeDisplayProps {
@@ -123,15 +123,25 @@ export function BookingDateDisplay({ dateIso }: { dateIso: string }) {
 }
 
 function useClientTimeZone() {
-  const [timeZone, setTimeZone] = useState("UTC");
+  return useSyncExternalStore(
+    subscribeToTimeZone,
+    getClientTimeZoneSnapshot,
+    getServerTimeZoneSnapshot
+  );
+}
 
-  useEffect(() => {
-    try {
-      setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
-    } catch {
-      setTimeZone("UTC");
-    }
-  }, []);
+function subscribeToTimeZone() {
+  return () => undefined;
+}
 
-  return timeZone;
+function getClientTimeZoneSnapshot() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
+}
+
+function getServerTimeZoneSnapshot() {
+  return "UTC";
 }

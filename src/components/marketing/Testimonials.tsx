@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Image from "next/image";
 import { StarIcon } from "@heroicons/react/24/solid";
 import { cn } from "@/lib/utils";
 import { testimonials, type Testimonial } from "@/data/testimonials";
@@ -218,9 +219,11 @@ export function Testimonials({ items }: TestimonialsProps) {
                                         <div className="border-t border-border pt-6 flex items-center gap-4">
                                             <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0 bg-muted">
                                                 {testimonial.image ? (
-                                                    <img
+                                                    <Image
                                                         src={testimonial.image}
                                                         alt={testimonial.name}
+                                                        fill
+                                                        sizes="48px"
                                                         className="h-full w-full object-cover"
                                                     />
                                                 ) : (

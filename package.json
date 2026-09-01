@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "prisma generate",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "preflight:scale-migration": "node scripts/preflight-scale-migration.mjs",
+    "load:smoke": "node scripts/load-smoke.mjs",
     "test": "vitest --run",
     "test:watch": "vitest"
   },

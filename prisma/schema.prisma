@@ -20,13 +20,13 @@ enum UserRole {
 // ── Auth Models ────────────────────────────────────────────────────────
 
 model User {
-  id                         String                 @id @default(cuid())
+  id                         String                   @id @default(cuid())
   name                       String?
-  email                      String?                @unique
+  email                      String?                  @unique
   password                   String?
   emailVerified              DateTime?
   image                      String?
-  role                       UserRole               @default(CLIENT)
+  role                       UserRole                 @default(CLIENT)
   accounts                   Account[]
   sessions                   Session[]
   emailVerificationTokens    EmailVerificationToken[]
@@ -34,23 +34,23 @@ model User {
   enrollments                Enrollment[]
   quizAttempts               QuizAttempt[]
   payments                   Payment[]
-  availability               Availability[]         @relation("CoachAvailability")
-  clientBookings             Booking[]              @relation("ClientBookings")
-  coachBookings              Booking[]              @relation("CoachBookings")
-  ownedProjects              Project[]              @relation("ProjectOwner")
-  assignedProjects           Project[]              @relation("ProjectCoach")
-  projectCollaborations      ProjectCollaborator[]  @relation("ProjectCollaboratorUser")
-  sentProjectCollaborations  ProjectCollaborator[]  @relation("ProjectCollaboratorInviter")
-  sentProjectInvitations     ProjectInvitation[]    @relation("ProjectInvitationInviter")
-  acceptedProjectInvitations ProjectInvitation[]    @relation("ProjectInvitationAcceptedBy")
-  securityAuditLogs          SecurityAuditLog[]     @relation("SecurityAuditActor")
+  availability               Availability[]           @relation("CoachAvailability")
+  clientBookings             Booking[]                @relation("ClientBookings")
+  coachBookings              Booking[]                @relation("CoachBookings")
+  ownedProjects              Project[]                @relation("ProjectOwner")
+  assignedProjects           Project[]                @relation("ProjectCoach")
+  projectCollaborations      ProjectCollaborator[]    @relation("ProjectCollaboratorUser")
+  sentProjectCollaborations  ProjectCollaborator[]    @relation("ProjectCollaboratorInviter")
+  sentProjectInvitations     ProjectInvitation[]      @relation("ProjectInvitationInviter")
+  acceptedProjectInvitations ProjectInvitation[]      @relation("ProjectInvitationAcceptedBy")
+  securityAuditLogs          SecurityAuditLog[]       @relation("SecurityAuditActor")
   comments                   ProjectComment[]
-  managedAcceleratorPrograms AcceleratorProgram[]   @relation("ProgramManager")
+  managedAcceleratorPrograms AcceleratorProgram[]     @relation("ProgramManager")
   programMemberships         ProgramMember[]
   perceptoscopeAnalyses      PerceptoscopeAnalysis[]
   recommendations            Recommendation[]
-  createdAt                  DateTime               @default(now())
-  updatedAt                  DateTime               @updatedAt
+  createdAt                  DateTime                 @default(now())
+  updatedAt                  DateTime                 @updatedAt
 }
 
 model Account {
@@ -264,8 +264,10 @@ model Payment {
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
+  @@unique([provider, providerRef])
   @@index([userId])
   @@index([providerRef])
+  @@index([status, createdAt])
 }
 
 // ── Booking System ─────────────────────────────────────────────────────
@@ -317,7 +319,7 @@ model Booking {
   coach        User            @relation("CoachBookings", fields: [coachId], references: [id], onDelete: Cascade)
   serviceId    String
   service      ServiceOffering @relation(fields: [serviceId], references: [id])
-  paymentId    String?
+  paymentId    String?         @unique
   payment      Payment?        @relation(fields: [paymentId], references: [id])
   status       BookingStatus   @default(PENDING)
   startTime    DateTime
@@ -332,7 +334,9 @@ model Booking {
   updatedAt    DateTime        @updatedAt
 
   @@index([clientId, status])
+  @@index([clientId, startTime])
   @@index([coachId, status])
+  @@index([coachId, status, startTime, endTime])
   @@index([startTime])
 }
 
@@ -366,24 +370,24 @@ enum ProjectInvitationStatus {
 }
 
 model Project {
-  id                   String                 @id @default(cuid())
-  title                String
-  description          String?
-  status               ProjectStatus          @default(BRIEF)
-  clientId             String
-  client               User                   @relation("ProjectOwner", fields: [clientId], references: [id], onDelete: Cascade)
-  coachId              String?
-  coach                User?                  @relation("ProjectCoach", fields: [coachId], references: [id])
-  brief                String? // Client's pitch brief / context
-  feedback             String? // Coach's latest feedback
-  dueDate              DateTime?
-  deliverables         Deliverable[]
-  comments             ProjectComment[]
-  collaborators        ProjectCollaborator[]
-  invitations          ProjectInvitation[]
+  id                    String                  @id @default(cuid())
+  title                 String
+  description           String?
+  status                ProjectStatus           @default(BRIEF)
+  clientId              String
+  client                User                    @relation("ProjectOwner", fields: [clientId], references: [id], onDelete: Cascade)
+  coachId               String?
+  coach                 User?                   @relation("ProjectCoach", fields: [coachId], references: [id])
+  brief                 String? // Client's pitch brief / context
+  feedback              String? // Coach's latest feedback
+  dueDate               DateTime?
+  deliverables          Deliverable[]
+  comments              ProjectComment[]
+  collaborators         ProjectCollaborator[]
+  invitations           ProjectInvitation[]
   perceptoscopeAnalyses PerceptoscopeAnalysis[]
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
 
   @@index([clientId])
   @@index([coachId])
@@ -547,11 +551,11 @@ enum PerceptoscopeProvider {
 }
 
 model PerceptoscopeAnalysis {
-  id              String                 @id @default(cuid())
+  id              String                  @id @default(cuid())
   userId          String
-  user            User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
   projectId       String?
-  project         Project?               @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project         Project?                @relation(fields: [projectId], references: [id], onDelete: SetNull)
   title           String
   founderContext  String?
   fileName        String
@@ -570,10 +574,11 @@ model PerceptoscopeAnalysis {
   completedAt     DateTime?
   expiresAt       DateTime?
   agentRuns       PerceptoscopeAgentRun[]
-  createdAt       DateTime               @default(now())
-  updatedAt       DateTime               @updatedAt
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
 
   @@index([userId, createdAt])
+  @@index([userId, status])
   @@index([projectId])
   @@index([status])
   @@index([fileFingerprint])
@@ -581,7 +586,7 @@ model PerceptoscopeAnalysis {
 }
 
 model PerceptoscopeAgentRun {
-  id          String                @id @default(cuid())
+  id          String                 @id @default(cuid())
   analysisId  String
   analysis    PerceptoscopeAnalysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
   kind        PerceptoscopeAgentKind
@@ -593,8 +598,8 @@ model PerceptoscopeAgentRun {
   error       String?
   startedAt   DateTime?
   completedAt DateTime?
-  createdAt   DateTime              @default(now())
-  updatedAt   DateTime              @updatedAt
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
 
   @@index([analysisId, kind])
   @@index([status])
@@ -642,9 +647,9 @@ model Recommendation {
   id         String               @id @default(cuid())
   userId     String
   user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  text       String               // The recommendation body (max ~1000 chars)
+  text       String // The recommendation body (max ~1000 chars)
   stars      Int                  @default(5) // 1-5 star rating
-  role       String?              // Optional role override e.g. "CEO, Todoke"
+  role       String? // Optional role override e.g. "CEO, Todoke"
   status     RecommendationStatus @default(PENDING)
   featured   Boolean              @default(false)
   reviewedAt DateTime?
@@ -652,5 +657,6 @@ model Recommendation {
   updatedAt  DateTime             @updatedAt
 
   @@index([status])
+  @@index([status, featured, reviewedAt, createdAt])
   @@index([userId])
 }

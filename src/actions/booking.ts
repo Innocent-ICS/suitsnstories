@@ -1,6 +1,7 @@
 "use server";
 
 import * as z from "zod";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
@@ -194,18 +195,27 @@ export async function createBooking(data: z.input<typeof BookingSchema>) {
 
   // For free services, book directly
   if (service.price === 0) {
-    const booking = await db.booking.create({
-      data: {
-        clientId: userId,
-        coachId: validated.coachId,
-        serviceId: validated.serviceId,
-        startTime,
-        endTime,
-        notes: validated.notes || null,
-        status: "CONFIRMED",
-        timezone: DEFAULT_BOOKING_TIMEZONE,
-      },
-    });
+    let booking: { id: string };
+    try {
+      booking = await db.booking.create({
+        data: {
+          clientId: userId,
+          coachId: validated.coachId,
+          serviceId: validated.serviceId,
+          startTime,
+          endTime,
+          notes: validated.notes || null,
+          status: "CONFIRMED",
+          timezone: DEFAULT_BOOKING_TIMEZONE,
+        },
+        select: { id: true },
+      });
+    } catch (error) {
+      if (isBookingConflictError(error)) {
+        return { success: false, error: "Time slot no longer available" };
+      }
+      throw error;
+    }
 
     // Send confirmation emails
     const client = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
@@ -233,6 +243,13 @@ export async function createBooking(data: z.input<typeof BookingSchema>) {
 
   // Paid service — placeholder for PayStack flow
   return { success: false, error: "Payment required", requiresPayment: true };
+}
+
+function isBookingConflictError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2002" || error.code === "P2004")
+  );
 }
 
 export async function updateBookingStatus(

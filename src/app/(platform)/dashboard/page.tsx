@@ -88,6 +88,7 @@ export default async function DashboardPage() {
         db.enrollment.findMany({
           where: { userId: session.user.id },
           orderBy: { updatedAt: "desc" },
+          take: 5,
           include: {
             progress: {
               where: { completed: true },
@@ -97,7 +98,12 @@ export default async function DashboardPage() {
               include: {
                 modules: {
                   orderBy: { order: "asc" },
-                  include: { lessons: { orderBy: { order: "asc" } } },
+                  include: {
+                    lessons: {
+                      orderBy: { order: "asc" },
+                      select: { id: true, title: true },
+                    },
+                  },
                 },
               },
             },
