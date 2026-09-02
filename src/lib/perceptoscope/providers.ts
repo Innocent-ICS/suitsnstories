@@ -47,9 +47,12 @@ export function chooseProvider(options: {
   hasImages?: boolean;
   preferred?: string | null;
 }): PerceptoscopeProviderName {
-  const preferred = options.preferred?.toUpperCase();
+  const preferred = normalizeProviderName(options.preferred) || normalizeProviderName(process.env.PERCEPTOSCOPE_PROVIDER);
   if (preferred === "OPENROUTER" && hasOpenRouterKey()) return "OPENROUTER";
   if (preferred === "GROQ" && hasGroqKey()) return "GROQ";
+  if (preferred) {
+    throw new Error(`PERCEPTOSCOPE_PROVIDER=${preferred} is configured, but its API key is missing.`);
+  }
   if (options.needsPdfOcr && hasOpenRouterKey()) return "OPENROUTER";
   if (options.hasImages && hasGroqKey()) return "GROQ";
   if (hasOpenRouterKey()) return "OPENROUTER";
@@ -106,11 +109,13 @@ async function callOpenRouter<T>(payload: ProviderMessagePayload): Promise<Provi
   const key = process.env.OPEN_ROUTER_KEY || process.env.OPENROUTER_API_KEY;
   if (!key) throw new Error("OPEN_ROUTER_KEY is not configured.");
 
-  const model = process.env.PERCEPTOSCOPE_OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL;
-  const content = buildMultimodalContent(payload.prompt, payload.images, payload.pdf);
-  const plugins = payload.pdf
-    ? [{ id: "file-parser", pdf: { engine: payload.pdf.useOcr ? "mistral-ocr" : "cloudflare-ai" } }]
+  const model = getOpenRouterModel();
+  const pdf = shouldSendPdfFile(model) ? payload.pdf : undefined;
+  const content = buildMultimodalContent(payload.prompt, payload.images, pdf);
+  const plugins = pdf
+    ? [{ id: "file-parser", pdf: { engine: pdf.useOcr ? "mistral-ocr" : "cloudflare-ai" } }]
     : undefined;
+  const provider = buildOpenRouterRouting(model);
 
   const response = await fetchWithTimeout("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -126,6 +131,7 @@ async function callOpenRouter<T>(payload: ProviderMessagePayload): Promise<Provi
         { role: "system", content: payload.system },
         { role: "user", content },
       ],
+      provider,
       plugins,
       temperature: payload.temperature ?? 0.2,
       max_tokens: payload.maxTokens ?? 1800,
@@ -174,6 +180,39 @@ function buildMultimodalContent(
   }
 
   return content;
+}
+
+function normalizeProviderName(value?: string | null): PerceptoscopeProviderName | null {
+  const normalized = value?.trim().toUpperCase();
+  if (normalized === "OPENROUTER" || normalized === "GROQ") return normalized;
+  return null;
+}
+
+function getOpenRouterModel() {
+  if (process.env.PERCEPTOSCOPE_TEST_MODE === "true" && process.env.PERCEPTOSCOPE_OPENROUTER_TEST_MODEL) {
+    return process.env.PERCEPTOSCOPE_OPENROUTER_TEST_MODEL;
+  }
+
+  return process.env.PERCEPTOSCOPE_OPENROUTER_MODEL || DEFAULT_OPENROUTER_MODEL;
+}
+
+function buildOpenRouterRouting(model: string) {
+  const requireParameters = process.env.PERCEPTOSCOPE_OPENROUTER_REQUIRE_PARAMETERS !== "false";
+  const freeOnly =
+    process.env.PERCEPTOSCOPE_OPENROUTER_FREE_ONLY === "true" ||
+    model === "openrouter/free" ||
+    model.endsWith(":free");
+
+  if (!requireParameters && !freeOnly) return undefined;
+
+  return {
+    ...(requireParameters ? { require_parameters: true } : {}),
+    ...(freeOnly ? { max_price: { prompt: 0, completion: 0, image: 0 } } : {}),
+  };
+}
+
+function shouldSendPdfFile(model: string) {
+  return !(process.env.PERCEPTOSCOPE_TEST_MODE === "true" && model.endsWith(":free"));
 }
 
 function parseCompletionJson<T>(json: ChatCompletionResponse): T {

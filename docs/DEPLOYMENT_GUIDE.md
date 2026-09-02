@@ -59,8 +59,13 @@ RESEND_API_KEY=
 EMAIL_FROM=Suits & Stories <hello@yourdomain.com>
 GROQ_KEY=
 OPEN_ROUTER_KEY=
+PERCEPTOSCOPE_PROVIDER=OPENROUTER
 PERCEPTOSCOPE_GROQ_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
-PERCEPTOSCOPE_OPENROUTER_MODEL=nvidia/nemotron-nano-12b-v2-vl:free
+PERCEPTOSCOPE_OPENROUTER_MODEL=dots-studio/dots-3-note-preview:free
+PERCEPTOSCOPE_TEST_MODE=true
+PERCEPTOSCOPE_OPENROUTER_TEST_MODEL=dots-studio/dots-3-note-preview:free
+PERCEPTOSCOPE_OPENROUTER_REQUIRE_PARAMETERS=true
+PERCEPTOSCOPE_OPENROUTER_FREE_ONLY=true
 ```
 
 Notes:
@@ -69,6 +74,7 @@ Notes:
 - `SUPABASE_SERVICE_ROLE_KEY`, payment keys, OAuth secrets, email keys, and model provider keys must remain server-only.
 - Generate `AUTH_SECRET` with a cryptographically strong random value.
 - Add the same variables to Preview only when preview deployments need full integration access.
+- For local or preview model tests, set `PERCEPTOSCOPE_TEST_MODE=true`, `PERCEPTOSCOPE_OPENROUTER_TEST_MODEL=dots-studio/dots-3-note-preview:free`, and `PERCEPTOSCOPE_OPENROUTER_FREE_ONLY=true` to prevent accidental paid routing. For production-quality diagnostics, disable test mode, replace the default model with a paid stable multimodal model, and set `PERCEPTOSCOPE_OPENROUTER_FREE_ONLY=false`.
 
 ## 4. Vercel Project Setup
 

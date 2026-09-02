@@ -6,11 +6,26 @@
 
 import { describe, it, expect } from 'vitest';
 import { PrismaClient } from '@prisma/client';
+import { withPrismaConnectionSettings } from '../../src/lib/db';
+
+function createPrismaClient() {
+  const databaseUrl = withPrismaConnectionSettings(process.env.DATABASE_URL);
+
+  return new PrismaClient(
+    databaseUrl
+      ? {
+          datasources: {
+            db: { url: databaseUrl },
+          },
+        }
+      : undefined
+  );
+}
 
 describe('Database Connection Tests', () => {
   
   it('should successfully connect to the database', async () => {
-    const prisma = new PrismaClient();
+    const prisma = createPrismaClient();
     
     try {
       // Simple query to test connection
@@ -24,7 +39,7 @@ describe('Database Connection Tests', () => {
   }, 10000);
 
   it('should be able to query User table', async () => {
-    const prisma = new PrismaClient();
+    const prisma = createPrismaClient();
     
     try {
       const userCount = await prisma.user.count();
