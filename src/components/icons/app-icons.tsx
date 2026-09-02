@@ -4,10 +4,12 @@ import {
   ArrowRight01Icon as HugeArrowRightIcon,
   Attachment02Icon as HugeAttachmentIcon,
   BrainCircuitIcon as HugeBrainCircuitIcon,
+  Brain03Icon as HugeBrainIcon,
   BookOpen02Icon as HugeBookOpenIcon,
   BubbleChatIcon as HugeBubbleChatIcon,
   Calendar03Icon as HugeCalendarIcon,
   Cancel01Icon as HugeCancelIcon,
+  ChartIncreaseIcon as HugeChartIncreaseIcon,
   CheckIcon as HugeCheckIcon,
   CheckmarkBadge03Icon as HugeCheckBadgeIcon,
   CheckmarkCircle01Icon as HugeCheckCircleIcon,
@@ -58,9 +60,11 @@ import {
   Settings02Icon as HugeSettingsIcon,
   SparklesIcon as HugeSparklesIcon,
   StarIcon as HugeStarIcon,
+  StrategyIcon as HugeStrategyIcon,
   Sun02Icon as HugeSunIcon,
   SwatchIcon as HugeSwatchIcon,
   TextBoldIcon as HugeBoldIcon,
+  Target02Icon as HugeTargetIcon,
   Upload01Icon as HugeUploadIcon,
   UserCircleIcon as HugeUserCircleIcon,
   UserGroup02Icon as HugeUserGroupIcon,
@@ -127,6 +131,10 @@ export const MoonIcon = createIcon(HugeMoonIcon, "MoonIcon");
 export const NumberedListIcon = createIcon(HugeListOrderedIcon, "NumberedListIcon");
 export const PaperClipIcon = createIcon(HugeAttachmentIcon, "PaperClipIcon");
 export const PencilSquareIcon = createIcon(HugeEditIcon, "PencilSquareIcon");
+export const PhilosophyClarityIcon = createIcon(HugeTargetIcon, "PhilosophyClarityIcon");
+export const PhilosophyIdeasIcon = createIcon(HugeBrainIcon, "PhilosophyIdeasIcon");
+export const PhilosophyMultiplierIcon = createIcon(HugeChartIncreaseIcon, "PhilosophyMultiplierIcon");
+export const PhilosophyStrategyIcon = createIcon(HugeStrategyIcon, "PhilosophyStrategyIcon");
 export const PhotoIcon = createIcon(HugeImageIcon, "PhotoIcon");
 export const PlayCircleIcon = createIcon(HugePlayCircleIcon, "PlayCircleIcon");
 export const PlusIcon = createIcon(HugePlusIcon, "PlusIcon");

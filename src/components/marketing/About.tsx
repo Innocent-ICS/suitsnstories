@@ -4,7 +4,12 @@ import { LogoTicker } from "@/components/ui/logo-ticker";
 import Image from "next/image";
 import { FadeIn, FadeInStagger, fadeInItem } from "@/components/ui/motion";
 import { motion } from "framer-motion";
-import { LightBulbIcon, SparklesIcon, ScaleIcon, BoltIcon } from "@/components/icons/app-icons";
+import {
+    PhilosophyClarityIcon,
+    PhilosophyIdeasIcon,
+    PhilosophyMultiplierIcon,
+    PhilosophyStrategyIcon,
+} from "@/components/icons/app-icons";
 
 export function About() {
     return (
@@ -72,22 +77,22 @@ export function About() {
 
                     <FadeInStagger className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
                         <PhilosophyItem
-                            icon={<LightBulbIcon />}
+                            icon={<PhilosophyIdeasIcon />}
                             title="Ideas Matter"
                             desc="Strong ideas deserve to be understood instantly."
                         />
                         <PhilosophyItem
-                            icon={<BoltIcon />}
+                            icon={<PhilosophyClarityIcon />}
                             title="Clarity Wins"
                             desc="High-stakes rooms reward clarity, not just effort."
                         />
                         <PhilosophyItem
-                            icon={<ScaleIcon />}
+                            icon={<PhilosophyStrategyIcon />}
                             title="Strategic Art"
                             desc="Storytelling is a precision tool, not just fluff."
                         />
                         <PhilosophyItem
-                            icon={<SparklesIcon />}
+                            icon={<PhilosophyMultiplierIcon />}
                             title="Skill Multiplier"
                             desc="Narrative amplifies every other talent you possess."
                         />
