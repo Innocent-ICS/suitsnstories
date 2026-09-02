@@ -3,6 +3,7 @@ import {
   ArrowLeft02Icon as HugeArrowLeftIcon,
   ArrowRight01Icon as HugeArrowRightIcon,
   Attachment02Icon as HugeAttachmentIcon,
+  BrainCircuitIcon as HugeBrainCircuitIcon,
   BookOpen02Icon as HugeBookOpenIcon,
   BubbleChatIcon as HugeBubbleChatIcon,
   Calendar03Icon as HugeCalendarIcon,
@@ -26,6 +27,7 @@ import {
   EyeOffIcon as HugeEyeOffIcon,
   FileTextIcon as HugeFileTextIcon,
   FileUploadIcon as HugeFileUploadIcon,
+  Flowchart01Icon as HugeFlowchartIcon,
   Folder01Icon as HugeFolderIcon,
   Grid02Icon as HugeGridIcon,
   GoogleIcon as HugeGoogleIcon,
@@ -47,6 +49,7 @@ import {
   PeriscopeIcon as HugePeriscopeIcon,
   PlayCircleIcon as HugePlayCircleIcon,
   PlusSignIcon as HugePlusIcon,
+  PresentationPodiumIcon as HugePresentationPodiumIcon,
   PuzzleIcon as HugePuzzleIcon,
   Rocket02Icon as HugeRocketIcon,
   ScaleIcon as HugeScaleIcon,
@@ -104,6 +107,7 @@ export const Cog6ToothIcon = createIcon(HugeSettingsIcon, "Cog6ToothIcon");
 export const CreditCardIcon = createIcon(HugeCreditCardIcon, "CreditCardIcon");
 export const DocumentArrowUpIcon = createIcon(HugeFileUploadIcon, "DocumentArrowUpIcon");
 export const DocumentTextIcon = createIcon(HugeFileTextIcon, "DocumentTextIcon");
+export const DecisionPsychologyIcon = createIcon(HugeBrainCircuitIcon, "DecisionPsychologyIcon");
 export const EnvelopeIcon = createIcon(HugeMailIcon, "EnvelopeIcon");
 export const ExclamationTriangleIcon = createIcon(HugeDangerIcon, "ExclamationTriangleIcon");
 export const EyeIcon = createIcon(HugeEyeIcon, "EyeIcon");
@@ -126,6 +130,7 @@ export const PencilSquareIcon = createIcon(HugeEditIcon, "PencilSquareIcon");
 export const PhotoIcon = createIcon(HugeImageIcon, "PhotoIcon");
 export const PlayCircleIcon = createIcon(HugePlayCircleIcon, "PlayCircleIcon");
 export const PlusIcon = createIcon(HugePlusIcon, "PlusIcon");
+export const ProfessionalPowerIcon = createIcon(HugePresentationPodiumIcon, "ProfessionalPowerIcon");
 export const PuzzlePieceIcon = createIcon(HugePuzzleIcon, "PuzzlePieceIcon");
 export const RectangleGroupIcon = createIcon(HugeDashboardSquareIcon, "RectangleGroupIcon");
 export const RocketLaunchIcon = createIcon(HugeRocketIcon, "RocketLaunchIcon");
@@ -135,6 +140,7 @@ export const SparklesIcon = createIcon(HugeSparklesIcon, "SparklesIcon");
 export const Squares2X2Icon = createIcon(HugeGridIcon, "Squares2X2Icon");
 export const StarIcon = createIcon(HugeStarIcon, "StarIcon");
 export const StethoscopeIcon = createIcon(HugePeriscopeIcon, "StethoscopeIcon");
+export const StoryArchitectureIcon = createIcon(HugeFlowchartIcon, "StoryArchitectureIcon");
 export const SunIcon = createIcon(HugeSunIcon, "SunIcon");
 export const SwatchIcon = createIcon(HugeSwatchIcon, "SwatchIcon");
 export const TrashIcon = createIcon(HugeDeleteIcon, "TrashIcon");

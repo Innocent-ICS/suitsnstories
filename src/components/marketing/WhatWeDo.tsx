@@ -2,7 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeftIcon, ChevronRightIcon, SwatchIcon, LightBulbIcon, ScaleIcon } from "@/components/icons/app-icons";
+import {
+    ChevronLeftIcon,
+    ChevronRightIcon,
+    DecisionPsychologyIcon,
+    ProfessionalPowerIcon,
+    StoryArchitectureIcon,
+} from "@/components/icons/app-icons";
 import { FadeIn } from "@/components/ui/motion";
 import Image from "next/image";
 
@@ -60,17 +66,17 @@ export function WhatWeDo() {
                             <FeatureCard
                                 title="Story Architecture"
                                 description="We structure chaotic ideas into dependable narrative assets, ensuring every slide and sentence advances your strategic goal."
-                                icon={<SwatchIcon className="w-6 h-6 text-primary" />}
+                                icon={<StoryArchitectureIcon className="w-6 h-6 text-primary" />}
                             />
                             <FeatureCard
                                 title="Decision Psychology"
                                 description="We engineer your core message to align with how investors and executives actually process information and make high-stakes choices."
-                                icon={<LightBulbIcon className="w-6 h-6 text-primary" />}
+                                icon={<DecisionPsychologyIcon className="w-6 h-6 text-primary" />}
                             />
                             <FeatureCard
                                 title="Professional Power Dynamics"
                                 description="We equip you with the verbal and non-verbal tools to command the room, control the frame, and navigate skepticism with authority."
-                                icon={<ScaleIcon className="w-6 h-6 text-primary" />}
+                                icon={<ProfessionalPowerIcon className="w-6 h-6 text-primary" />}
                             />
                         </div>
                     </div>
