@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { ClockIcon } from "@heroicons/react/24/outline";
+import { ClockIcon } from "@/components/icons/app-icons";
 
 interface BookingTimeDisplayProps {
   startTime: string;

@@ -4,6 +4,8 @@
 import { motion } from "framer-motion";
 import { useMemo } from "react";
 
+const roundCoordinate = (value: number) => Number(value.toFixed(4));
+
 export const Spiral = () => {
     const particles = useMemo(() => Array.from({ length: 30 }).map((_, i) => i), []);
 
@@ -18,8 +20,8 @@ export const Spiral = () => {
                 {particles.map((i) => {
                     const angle = (i / 30) * Math.PI * 4; // 2 turns
                     const radius = 100 + (i * 10); // Expanding radius
-                    const x = Math.cos(angle) * radius;
-                    const y = Math.sin(angle) * radius;
+                    const x = roundCoordinate(Math.cos(angle) * radius);
+                    const y = roundCoordinate(Math.sin(angle) * radius);
 
                     return (
                         <motion.div
@@ -46,8 +48,8 @@ export const Spiral = () => {
                 {particles.map((i) => {
                     const angle = (i / 30) * Math.PI * 4 + (Math.PI * 2) / 3;
                     const radius = 100 + (i * 10);
-                    const x = Math.cos(angle) * radius;
-                    const y = Math.sin(angle) * radius;
+                    const x = roundCoordinate(Math.cos(angle) * radius);
+                    const y = roundCoordinate(Math.sin(angle) * radius);
 
                     return (
                         <motion.div
@@ -74,8 +76,8 @@ export const Spiral = () => {
                 {particles.map((i) => {
                     const angle = (i / 30) * Math.PI * 4 + (Math.PI * 4) / 3;
                     const radius = 100 + (i * 10);
-                    const x = Math.cos(angle) * radius;
-                    const y = Math.sin(angle) * radius;
+                    const x = roundCoordinate(Math.cos(angle) * radius);
+                    const y = roundCoordinate(Math.sin(angle) * radius);
 
                     return (
                         <motion.div

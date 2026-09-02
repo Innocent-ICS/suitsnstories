@@ -15,8 +15,8 @@ import {
   RocketLaunchIcon,
   ShieldCheckIcon,
   ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/outline";
-import { StethoscopeIcon } from "@/components/icons/stethoscope-icon";
+  StethoscopeIcon,
+} from "@/components/icons/app-icons";
 import type { UserRole } from "@/types/auth";
 
 interface NavItem {

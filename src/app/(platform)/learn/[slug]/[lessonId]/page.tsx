@@ -6,7 +6,7 @@ import { LessonContent } from "./lesson-content";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 interface LessonPageProps {
   params: Promise<{ slug: string; lessonId: string }>;

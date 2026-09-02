@@ -27,7 +27,7 @@ import {
   LinkIcon,
   ArrowUpTrayIcon,
   XMarkIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 const DELIVERABLE_MAX_FILE_SIZE = 20 * 1024 * 1024;
 const DELIVERABLE_ALLOWED_EXTENSIONS = new Set([

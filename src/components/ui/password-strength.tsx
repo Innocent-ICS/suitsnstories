@@ -1,6 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
+import { CheckIcon } from "@/components/icons/app-icons";
 
 interface PasswordStrengthProps {
   password: string;
@@ -41,21 +42,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
                       exit={{ scale: 0, rotate: 45 }}
                       transition={{ type: "spring", stiffness: 400, damping: 25 }}
                     >
-                      <svg
-                        className="w-2.5 h-2.5 stroke-[3]"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <motion.path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M4.5 12.75l6 6 9-13.5"
-                          initial={{ pathLength: 0 }}
-                          animate={{ pathLength: 1 }}
-                          transition={{ delay: 0.1, duration: 0.2 }}
-                        />
-                      </svg>
+                      <CheckIcon className="w-2.5 h-2.5" strokeWidth={2.4} />
                     </motion.div>
                   ) : (
                     <motion.div
@@ -85,4 +72,3 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
     </div>
   );
 }
-

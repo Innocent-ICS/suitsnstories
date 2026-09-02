@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { markLessonComplete, submitQuiz } from "@/actions/enrollment";
 import { getEmbeddableVideo } from "@/lib/video-embed";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon } from "@/components/icons/app-icons";
 
 interface LessonContentProps {
   lesson: {

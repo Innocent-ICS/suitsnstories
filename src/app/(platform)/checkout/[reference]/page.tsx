@@ -9,7 +9,7 @@ import {
   CreditCardIcon,
   ShieldCheckIcon,
   UserGroupIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 interface CheckoutPageProps {
   params: Promise<{ reference: string }>;

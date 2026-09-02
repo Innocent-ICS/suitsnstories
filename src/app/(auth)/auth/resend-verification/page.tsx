@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { resendVerification } from "@/actions/auth";
-import { ArrowPathIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon } from "@/components/icons/app-icons";
 
 export default function ResendVerificationPage() {
     const [error, setError] = useState<string | null>(null);

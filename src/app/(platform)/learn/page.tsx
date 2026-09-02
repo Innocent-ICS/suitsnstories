@@ -9,7 +9,7 @@ import {
   BookOpenIcon,
   CheckBadgeIcon,
   PlayCircleIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 export default async function LearnPage() {
   try {

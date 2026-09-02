@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { verifyEmail } from "@/actions/auth";
-import { ArrowPathIcon, CheckCircleIcon, ExclamationTriangleIcon, EnvelopeIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, CheckCircleIcon, ExclamationTriangleIcon, EnvelopeIcon } from "@/components/icons/app-icons";
 import { FloatingParticles } from "@/components/ui/floating-particles";
 
 type VerifyState = "pending" | "verifying" | "success" | "error" | "no-token";

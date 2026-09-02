@@ -2,10 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { StarIcon } from "@heroicons/react/24/solid";
+import { StarIcon } from "@/components/icons/app-icons";
 import { cn } from "@/lib/utils";
 import { testimonials, type Testimonial } from "@/data/testimonials";
-import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons/app-icons";
 
 // We duplicate the testimonials to create a seamless infinite loop.
 // [Before Buffer] [Original] [After Buffer]

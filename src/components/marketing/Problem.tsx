@@ -1,4 +1,4 @@
-import { ClockIcon, LightBulbIcon, LifebuoyIcon } from "@heroicons/react/24/outline";
+import { ClockIcon, LightBulbIcon, LifebuoyIcon } from "@/components/icons/app-icons";
 import { Carousel3D } from "@/components/ui/carousel-3d";
 
 export function Problem() {

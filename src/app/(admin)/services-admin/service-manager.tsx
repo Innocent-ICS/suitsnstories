@@ -12,7 +12,7 @@ import {
   PencilSquareIcon,
   XMarkIcon,
   ClockIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 interface ServiceData {
   id: string;

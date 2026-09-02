@@ -3,7 +3,7 @@
 import {
   ArrowDownTrayIcon,
   CalendarDaysIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 interface CalendarButtonProps {
   title: string;

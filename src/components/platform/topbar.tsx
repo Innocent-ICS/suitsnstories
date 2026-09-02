@@ -11,7 +11,7 @@ import {
   SunIcon,
   MoonIcon,
   ChatBubbleLeftRightIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 import { useTheme } from "next-themes";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import type { UserRole } from "@/types/auth";

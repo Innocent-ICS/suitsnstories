@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordStrength } from "@/components/ui/password-strength";
 import { register } from "@/actions/auth";
-import { ArrowPathIcon, EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, EyeIcon, EyeSlashIcon } from "@/components/icons/app-icons";
 import { FloatingParticles } from "@/components/ui/floating-particles";
 
 export default function SignUpPage() {

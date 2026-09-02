@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { UserIcon } from "@heroicons/react/24/solid";
+import { UserIcon } from "@/components/icons/app-icons";
 
 interface UserAvatarProps {
   src?: string | null;

@@ -8,8 +8,8 @@ import {
   DocumentArrowUpIcon,
   ExclamationTriangleIcon,
   SparklesIcon,
-} from "@heroicons/react/24/outline";
-import { StethoscopeIcon } from "@/components/icons/stethoscope-icon";
+  StethoscopeIcon,
+} from "@/components/icons/app-icons";
 
 type AnalysisStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED";
 

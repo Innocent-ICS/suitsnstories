@@ -15,9 +15,9 @@ import {
   RocketLaunchIcon,
   ShieldCheckIcon,
   Squares2X2Icon,
+  StethoscopeIcon,
   UsersIcon,
-} from "@heroicons/react/24/outline";
-import { StethoscopeIcon } from "@/components/icons/stethoscope-icon";
+} from "@/components/icons/app-icons";
 import type { UserRole } from "@/types/auth";
 import { cn } from "@/lib/utils";
 

@@ -8,7 +8,7 @@ import { UserAvatar } from "@/components/ui/user-avatar";
 import { getAvailableSlots, createBooking } from "@/actions/booking";
 import { initBookingPayment } from "@/actions/payment";
 import { CalendarButtons } from "../calendar-buttons";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon } from "@/components/icons/app-icons";
 
 interface Coach {
   id: string;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, ArrowRightIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, ArrowRightIcon } from "@/components/icons/app-icons";
 import { FadeIn, FadeInStagger, fadeInItem } from "@/components/ui/motion";
 import { motion } from "framer-motion";
 

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { submitContactInquiry } from "@/actions/contact";
-import { ArrowPathIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, CheckCircleIcon } from "@/components/icons/app-icons";
 
 export function ContactForm({ onCancel }: { onCancel?: () => void }) {
     const [loading, setLoading] = useState(false);

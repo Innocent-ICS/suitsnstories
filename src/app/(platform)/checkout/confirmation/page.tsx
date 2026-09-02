@@ -7,7 +7,7 @@ import { BookingDateDisplay, BookingTimeDisplay } from "../../bookings/booking-t
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 interface ConfirmationPageProps {
   searchParams: Promise<{ ref?: string; status?: string; reason?: string }>;

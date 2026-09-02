@@ -10,7 +10,8 @@ import {
   ChevronUpIcon,
   ChevronDownIcon,
   CheckCircleIcon,
-} from "@heroicons/react/24/outline";
+  CheckIcon,
+} from "@/components/icons/app-icons";
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -352,15 +353,7 @@ function QuestionCard({
                 }
               >
                 {question.correctAnswer === option && option.trim() && (
-                  <svg className="w-3 h-3 text-white" viewBox="0 0 12 12" fill="none">
-                    <path
-                      d="M2.5 6L5 8.5L9.5 3.5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <CheckIcon className="w-3 h-3 text-white" strokeWidth={2.2} />
                 )}
               </button>
 

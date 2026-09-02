@@ -10,7 +10,7 @@ import {
   CalendarIcon,
   ClockIcon,
   UserIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 export default async function BookingsPage() {
   const session = await auth();

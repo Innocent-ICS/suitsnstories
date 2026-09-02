@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, XMarkIcon } from "@/components/icons/app-icons";
 import { FadeIn } from "@/components/ui/motion";
 
 export function Diagnostic() {

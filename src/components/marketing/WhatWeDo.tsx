@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeftIcon, ChevronRightIcon, SwatchIcon, LightBulbIcon, ScaleIcon } from "@heroicons/react/24/outline";
+import { ChevronLeftIcon, ChevronRightIcon, SwatchIcon, LightBulbIcon, ScaleIcon } from "@/components/icons/app-icons";
 import { FadeIn } from "@/components/ui/motion";
 import Image from "next/image";
 

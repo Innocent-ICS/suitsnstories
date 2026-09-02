@@ -9,7 +9,7 @@ import {
   PuzzlePieceIcon,
   CheckCircleIcon,
   LockClosedIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 interface CoursePageProps {
   params: Promise<{ slug: string }>;

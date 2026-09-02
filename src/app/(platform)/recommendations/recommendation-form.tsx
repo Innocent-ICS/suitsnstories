@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { StarIcon } from "@heroicons/react/24/solid";
+import { StarIcon } from "@/components/icons/app-icons";
 import { submitRecommendation, type RecommendationFormData } from "@/actions/recommendation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

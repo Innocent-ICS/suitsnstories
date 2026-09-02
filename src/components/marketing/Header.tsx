@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { MenuIcon, XMarkIcon } from "@/components/icons/app-icons";
 
 export function Header() {
     return (
@@ -55,12 +56,8 @@ export function Header() {
                     <details className="group relative md:hidden">
                         <summary className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground [&::-webkit-details-marker]:hidden">
                             <span className="sr-only">Navigation</span>
-                            <svg className="h-5 w-5 group-open:hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
-                            </svg>
-                            <svg className="hidden h-5 w-5 group-open:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-                            </svg>
+                            <MenuIcon className="h-5 w-5 group-open:hidden" />
+                            <XMarkIcon className="hidden h-5 w-5 group-open:block" />
                         </summary>
                         <div className="absolute right-0 top-12 w-56 rounded-lg border border-border bg-card p-2 shadow-xl">
                             <MobileNavLink href="/methodology">Methodology</MobileNavLink>

@@ -10,7 +10,7 @@ import {
   ItalicIcon,
   ListBulletIcon,
   NumberedListIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 
 interface RichTextEditorProps {
   content: string;

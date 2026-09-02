@@ -7,7 +7,7 @@ import {
   ClockIcon,
   RocketLaunchIcon,
   UserGroupIcon,
-} from "@heroicons/react/24/outline";
+} from "@/components/icons/app-icons";
 import {
   AddProgramMemberForm,
   NewProgramButton,

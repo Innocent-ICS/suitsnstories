@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateUserRole } from "@/actions/admin";
+import { ChevronDownIcon } from "@/components/icons/app-icons";
 
 const ROLES = [
   { value: "CLIENT", label: "Client", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
@@ -45,9 +46,7 @@ export function RoleChanger({ userId, currentRole }: { userId: string; currentRo
         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors cursor-pointer hover:opacity-80 ${current.color}`}
       >
         {loading ? "..." : current.label}
-        <svg className="h-3 w-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDownIcon className="h-3 w-3 opacity-50" strokeWidth={2} />
       </button>
 
       {open && (

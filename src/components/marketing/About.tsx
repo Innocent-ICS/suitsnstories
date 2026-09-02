@@ -4,7 +4,7 @@ import { LogoTicker } from "@/components/ui/logo-ticker";
 import Image from "next/image";
 import { FadeIn, FadeInStagger, fadeInItem } from "@/components/ui/motion";
 import { motion } from "framer-motion";
-import { LightBulbIcon, SparklesIcon, ScaleIcon, BoltIcon } from "@heroicons/react/24/outline";
+import { LightBulbIcon, SparklesIcon, ScaleIcon, BoltIcon } from "@/components/icons/app-icons";
 
 export function About() {
     return (
